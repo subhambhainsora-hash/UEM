@@ -1,0 +1,43 @@
+@import 'tailwindcss' source(none);
+@source '../**/*.{ts,tsx}';
+@import 'tw-animate-css';
+@import './default_theme.css';
+
+/* UEM product theme on top of the shared miniOrange kit tokens.
+   Product UI uses the blue theme; orange stays a brand accent only. */
+:root {
+  --primary: #1976d2;
+  --accent: #e3f2fd;
+  --accent-foreground: #1976d2;
+  --foreground: #303030;
+  --muted-foreground: #666666;
+  --border: #e0e0e0;
+  --ring: #1976d2;
+  --destructive: #d32f2f;
+}
+
+@theme {
+  --font-sans: 'DM Sans', 'Noto Sans Arabic', sans-serif;
+  --color-ink: #303030;
+  --color-heading: #1c1b1f;
+  --color-muted: #666666;
+  --color-line: #e0e0e0;
+  --color-soft: #ebebeb;
+  --color-row: #eeeeee;
+  --color-brand: #e8590c;
+  --color-uem: #1976d2;
+  --color-uem-soft: #e3f2fd;
+  --color-nav: #3858e9;
+  --color-nav-bg: #f0f7ff;
+  --color-ok: #2e7d32;
+  --color-bad: #d32f2f;
+  --color-warn: #b45309;
+  --color-later: #6b3fc4;
+  --color-chip: #eef1f5;
+}
+
+@layer base {
+  body { @apply font-sans text-ink bg-white m-0; }
+  button { cursor: pointer; font-family: inherit; }
+  button:disabled { cursor: not-allowed; }
+}

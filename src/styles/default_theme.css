@@ -1,0 +1,125 @@
+/* KEEP_IN_SYNC(fullscreen/resources/figmake/shadcn/globals.css) */
+
+:root {
+  --font-size: 16px;
+  --background: #FFFFFF;
+  --foreground: #2E2E2E;
+  --card: #FFFFFF;
+  --card-foreground: #2E2E2E;
+  --popover: #FFFFFF;
+  --popover-foreground: #2E2E2E;
+  --primary: #0052CC;
+  --primary-foreground: #FFFFFF;
+  --secondary: rgba(9, 30, 66, 0.04);
+  --secondary-foreground: #6B7280;
+  --muted: #F3F3F5;
+  --muted-foreground: #6B7280;
+  --accent: #EBF3FF;
+  --accent-foreground: #0052CC;
+  --destructive: #DE350B;
+  --destructive-foreground: #FFFFFF;
+  --border: #EBEBEB;
+  --input: #EBEBEB;
+  --input-background: #FAFAFB;
+  --switch-background: #6B7280;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: #4C9AFF;
+  --chart-1: #0052CC;
+  --chart-2: #36B37E;
+  --chart-3: #FFAB00;
+  --chart-4: #6554C0;
+  --chart-5: #FF5630;
+  --radius: 0.5rem;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #2E2E2E;
+  --sidebar-primary: #0052CC;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F3F3F5;
+  --sidebar-accent-foreground: #2E2E2E;
+  --sidebar-border: #EBEBEB;
+  --sidebar-ring: #4C9AFF;
+}
+
+/* Atlassian dark tokens. The shadcn primitives (popover, dropdown, select,
+   dialog, sheet, tooltip) read these; the hardcoded hex utilities elsewhere
+   are remapped in ./dark-overrides.css using the same values. */
+.dark {
+  --background: #1D2125;
+  --foreground: #B6C2CF;
+  --card: #22272B;
+  --card-foreground: #B6C2CF;
+  --popover: #282E33;
+  --popover-foreground: #B6C2CF;
+  --primary: #579DFF;
+  --primary-foreground: #1D2125;
+  --secondary: rgba(255, 255, 255, 0.06);
+  --secondary-foreground: #9FADBC;
+  --muted: #2C333A;
+  --muted-foreground: #9FADBC;
+  --accent: #1C2B41;
+  --accent-foreground: #579DFF;
+  --destructive: #F87168;
+  --destructive-foreground: #1D2125;
+  --border: #3C4349;
+  --input: #3C4349;
+  --input-background: #282E33;
+  --switch-background: #596773;
+  --ring: #85B8FF;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --chart-1: #579DFF;
+  --chart-2: #4BCE97;
+  --chart-3: #F5CD47;
+  --chart-4: #B8ACF6;
+  --chart-5: #FD9891;
+  --sidebar: #1D2125;
+  --sidebar-foreground: #B6C2CF;
+  --sidebar-primary: #579DFF;
+  --sidebar-primary-foreground: #1D2125;
+  --sidebar-accent: #2C333A;
+  --sidebar-accent-foreground: #B6C2CF;
+  --sidebar-border: #3C4349;
+  --sidebar-ring: #85B8FF;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
