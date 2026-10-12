@@ -3,9 +3,10 @@ import { Info, Search, Upload } from 'lucide-react';
 import { Input } from '../components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '../components/ui/toggle-group';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
-import { AppIcon, Drawer, SourceBadge, ToggleRow, UButton, UCheckbox } from '../components/uem';
+import { AppIcon, Drawer, SigningBadge, SourceBadge, ToggleRow, UButton, UCheckbox } from '../components/uem';
+import { LastBuildDialog } from './Dialogs';
 import { cn } from '../components/ui/utils';
-import { storeSearchResults, libraryApps, type CatalogApp } from '../data';
+import { storeSearchResults, libraryApps, signingState, plural, type CatalogApp } from '../data';
 
 /* D2 · Add App Store apps -------------------------------------------------- */
 export function AddStoreDrawer({
@@ -43,7 +44,7 @@ export function AddStoreDrawer({
       }
     >
       <div className="border-t border-soft px-6 pt-4">
-        <label className="flex h-10 items-center gap-2.5 rounded-[4px] border-2 border-uem px-3">
+        <label className="flex h-10 items-center gap-2.5 rounded-[4px] border border-uem px-3">
           <Search className="size-4 text-muted" strokeWidth={1.7} />
           <Input value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search App Store" className="h-auto border-0 bg-transparent p-0 text-[15px] shadow-none focus-visible:ring-0" />
         </label>
@@ -113,20 +114,21 @@ export function AddInhouseDrawer({
 
         {mode === 'library' && (
           <>
-            <label className="mt-[18px] flex h-10 items-center gap-2.5 rounded-[4px] border border-[#c4c4c4] px-3">
+            <label className="mt-[18px] flex h-10 items-center gap-2.5 rounded-[6px] border border-line px-3">
               <Search className="size-4 text-muted" strokeWidth={1.7} />
               <Input placeholder="Search the App Library" className="h-auto border-0 bg-transparent p-0 text-[15px] shadow-none focus-visible:ring-0" />
             </label>
             <div className="mt-4 overflow-hidden rounded-[6px] border border-line">
               {libraryApps.map((a) => {
                 const here = inProfile.includes(a.id);
-                const sibling = !here && a.id === 'crm-beta';
+                const sibling = !here && a.id === 'crm-beta' && inProfile.includes('crm');
+                const expired = signingState(a.signingExpires).kind === 'expired';
                 const checked = here || sel.includes(a.id);
                 return (
                   <label key={a.id} className={cn('flex items-center gap-3.5 border-b border-row px-4 py-2.5 last:border-0', sel.includes(a.id) && 'bg-[#f0f7ff]')}>
                     <UCheckbox
                       checked={checked}
-                      disabled={here || sibling}
+                      disabled={here || sibling || expired}
                       onCheckedChange={() => setSel((s) => (s.includes(a.id) ? s.filter((x) => x !== a.id) : [...s, a.id]))}
                       aria-label={a.name}
                     />
@@ -135,8 +137,10 @@ export function AddInhouseDrawer({
                       <span className="text-[15px] font-medium text-heading">{a.name}</span>
                       <span className="text-[12px] text-muted">{a.bundleId} · build {a.build}</span>
                     </span>
-                    <span className={cn('max-w-[140px] text-right text-[12px]', a.signingWarn ? 'text-[#c2410c]' : 'text-muted')}>
-                      {here ? 'In this profile' : sibling ? 'Another channel of this app is in the profile' : a.signingWarn ? 'Signing expires 12 Nov 2026' : ''}
+                    <span className="max-w-[170px] text-right text-[12px] text-muted">
+                      {here ? 'In this profile' : sibling ? 'Another channel of this app is in the profile' : expired ? (
+                        <span className="flex flex-col items-end gap-0.5"><SigningBadge expires={a.signingExpires} short /><span>Upload a re-signed build to add it</span></span>
+                      ) : signingState(a.signingExpires).kind === 'expiring' ? <SigningBadge expires={a.signingExpires} short /> : ''}
                     </span>
                   </label>
                 );
@@ -161,7 +165,7 @@ export function AddInhouseDrawer({
             </div>
             <div className="relative mt-5">
               <label className="absolute -top-2 left-2.5 bg-white px-1 text-[12px] text-muted">App name in the library</label>
-              <Input defaultValue="Acme Expense" className="h-[42px] rounded-[4px] border-[#c4c4c4] bg-white text-[15px]" />
+              <Input defaultValue="Acme Expense" className="h-[42px] rounded-[6px] border-line bg-white text-[15px]" />
             </div>
             <p className="mt-2.5 text-[12px] text-muted">The app is saved to the App Library and added to this profile.</p>
           </>
@@ -171,7 +175,7 @@ export function AddInhouseDrawer({
           <>
             <div className="relative mt-5">
               <label className="absolute -top-2 left-2.5 bg-white px-1 text-[12px] text-muted">Manifest URL</label>
-              <Input placeholder="https://apps.acme.com/expense/manifest.plist" className="h-[42px] rounded-[4px] border-[#c4c4c4] bg-white text-[15px]" />
+              <Input placeholder="https://apps.acme.com/expense/manifest.plist" className="h-[42px] rounded-[6px] border-line bg-white text-[15px]" />
             </div>
             <p className="mt-2.5 text-[12px] text-muted">We read the bundle ID and version from the manifest. The app is saved to the App Library and added to this profile.</p>
           </>
@@ -191,13 +195,23 @@ const toggleDefs = [
   ['tap', 'Tap to Pay screen lock', 'Locks the device after each Tap to Pay transaction'],
 ] as const;
 
-export function AppSettingsDrawer({ app, onOpenChange }: { app: CatalogApp | null; onOpenChange: (o: boolean) => void }) {
+export function AppSettingsDrawer({ app, onOpenChange, onSave }: { app: CatalogApp | null; onOpenChange: (o: boolean) => void; onSave?: () => void }) {
   const enterprise = app?.source === 'Enterprise';
+  const lib = app ? libraryApps.find((l) => l.id === app.id) : undefined;
+  const [lastBuild, setLastBuild] = React.useState<string | null>(null);
   const [state, setState] = React.useState<Record<string, boolean>>({});
   React.useEffect(() => {
     setState(enterprise ? { backup: true, vpn: true } : { removable: true, backup: true });
   }, [app?.id, enterprise]);
-  const [builds, setBuilds] = React.useState({ '3.4.1': 'Available', '3.4.0': 'Retired' } as Record<string, string>);
+  const [builds, setBuilds] = React.useState<Record<string, string>>({});
+  React.useEffect(() => {
+    setBuilds(Object.fromEntries((lib?.builds ?? []).map((b) => [b.version, b.status])));
+  }, [lib]);
+  const toggleBuild = (v: string, s: string) => {
+    if (s === 'Available' && Object.values(builds).filter((x) => x === 'Available').length <= 1) { setLastBuild(v); return; }
+    setBuilds((b) => ({ ...b, [v]: s === 'Available' ? 'Retired' : 'Available' }));
+    onSave?.();
+  };
   const tab = 'h-12 flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-3.5 text-[14px] font-normal text-ink shadow-none data-[state=active]:border-uem data-[state=active]:font-medium data-[state=active]:text-uem data-[state=active]:shadow-none';
   return (
     <Drawer
@@ -209,7 +223,7 @@ export function AppSettingsDrawer({ app, onOpenChange }: { app: CatalogApp | nul
         <>
           <span className="grow" />
           <UButton tone="outline" onClick={() => onOpenChange(false)}>Cancel</UButton>
-          <UButton onClick={() => onOpenChange(false)}>Save settings</UButton>
+          <UButton onClick={() => { onSave?.(); onOpenChange(false); }}>Save settings</UButton>
         </>
       }
     >
@@ -235,16 +249,17 @@ export function AppSettingsDrawer({ app, onOpenChange }: { app: CatalogApp | nul
                     <div key={v} className={cn('flex items-center gap-4 border-b border-row px-3 py-2 text-[13px] last:border-0', s === 'Available' && 'bg-[#f0f7ff]')}>
                       <span className="w-14 font-semibold">{v}</span>
                       <span className={cn('rounded-[10px] px-2 py-px', s === 'Available' ? 'bg-[#e8f5e9] text-ok' : 'bg-[#f5f5f5] text-muted')}>{s}</span>
-                      <span className="grow text-muted">{s === 'Available' ? 'Devices get this build · signing expires 31 Mar 2027' : 'Restore to roll devices back to this build'}</span>
-                      <UButton tone="neutral" size="sm" className="h-[30px]" onClick={() => setBuilds((b) => ({ ...b, [v]: s === 'Available' ? 'Retired' : 'Available' }))}>
+                      <span className="grow text-muted">{s === 'Available' ? <span className="inline-flex items-center gap-2">Devices get this build · <SigningBadge expires={app.signingExpires} /></span> : 'Restore to roll devices back to this build'}</span>
+                      <UButton tone="neutral" size="sm" className="h-[30px]" onClick={() => toggleBuild(v, s)}>
                         {s === 'Available' ? 'Retire' : 'Restore'}
                       </UButton>
                     </div>
                   ))}
                 </div>
                 <p className="mt-2 text-[12px] text-[#7b341e]">
-                  Builds belong to the channel {app.name}. Retiring one affects every profile that uses this channel.
+                  Builds belong to the channel {app.name}. Retiring one affects {lib ? `${plural(lib.usedBy.profiles, 'profile')} and ${plural(lib.usedBy.devices, 'device')}` : 'every profile that uses this channel'}.
                 </p>
+                <LastBuildDialog open={!!lastBuild} appName={app.name} version={lastBuild ?? ''} onClose={() => setLastBuild(null)} />
               </div>
             ) : (
               <div className="mt-4 flex gap-2 rounded-[4px] bg-[#e3f2fd] px-3.5 py-2.5 text-[13px] text-[#1565c0]">
@@ -266,11 +281,11 @@ export function AppSettingsDrawer({ app, onOpenChange }: { app: CatalogApp | nul
             </TabsContent>
             <TabsContent value="domains" className="px-6 pt-4 text-[14px] text-muted">
               Associated domains let the app open links and use credentials for these domains.
-              <Input placeholder="Add domain, e.g. acme.com" className="mt-3 h-10 rounded-[4px] border-[#c4c4c4] bg-white" />
+              <Input placeholder="Add domain, e.g. acme.com" className="mt-3 h-10 rounded-[6px] border-line bg-white" />
             </TabsContent>
             <TabsContent value="config" className="px-6 pt-4 text-[14px] text-muted">
               Managed app configuration is sent to the app as key-value pairs.
-              <textarea placeholder="<dict>…</dict>" className="mt-3 h-40 w-full rounded-[4px] border border-[#c4c4c4] p-3 font-mono text-[13px]" />
+              <textarea placeholder="<dict>…</dict>" className="mt-3 h-40 w-full rounded-[6px] border border-line p-3 font-mono text-[13px]" />
             </TabsContent>
           </Tabs>
         </>
