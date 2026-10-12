@@ -3,7 +3,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
 import { AppIcon, Chip, CountBadge, LaterBadge, SigningBadge, UButton } from '../components/uem';
 import { cn } from '../components/ui/utils';
 import { signingState, type CatalogApp } from '../data';
-import { ProfileFields, SectionTitle } from '../components/ds';
+import { ProfileFields, SectionTitle, tabListClass, tabTriggerClass } from '../components/ds';
 
 export type SourceTab = 'store' | 'enterprise' | 'vpp';
 
@@ -42,9 +42,6 @@ function AppRow({ app, onConfigure, onRemove, flag }: { app: CatalogApp; onConfi
   );
 }
 
-const tabClass =
-  'h-11 flex-none gap-2 rounded-none border-0 border-b-2 border-transparent bg-transparent px-4 text-[14px] font-normal text-ink shadow-none ' +
-  'data-[state=active]:border-uem data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-uem data-[state=active]:shadow-none';
 
 export function AppCatalogSection({
   tab,
@@ -79,14 +76,14 @@ export function AppCatalogSection({
     <SectionTitle sub="Apps installed on every device that uses this profile">App Catalog</SectionTitle>
     <ProfileFields onChange={onChange} />
     <Tabs value={tab} onValueChange={(v) => onTab(v as SourceTab)} className="gap-0">
-      <TabsList aria-label="App sources" className="h-auto w-full justify-start rounded-none border-b border-line bg-transparent p-0">
-        <TabsTrigger value="store" className={tabClass}>
+      <TabsList aria-label="App sources" className={tabListClass}>
+        <TabsTrigger value="store" className={tabTriggerClass}>
           App Store <CountBadge n={storeApps.length} active={tab === 'store'} />
         </TabsTrigger>
-        <TabsTrigger value="enterprise" className={tabClass}>
+        <TabsTrigger value="enterprise" className={tabTriggerClass}>
           Enterprise <CountBadge n={enterpriseApps.length} active={tab === 'enterprise'} />
         </TabsTrigger>
-        <TabsTrigger value="vpp" className={tabClass}>
+        <TabsTrigger value="vpp" className={tabTriggerClass}>
           VPP <LaterBadge />
         </TabsTrigger>
       </TabsList>

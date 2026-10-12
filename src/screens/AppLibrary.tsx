@@ -6,6 +6,7 @@ import { Input } from '../components/ui/input';
 import { AppIcon, CountBadge, LaterBadge, SigningBadge, UButton } from '../components/uem';
 import { cn } from '../components/ui/utils';
 import { libraryApps, plural, signingState, type Build } from '../data';
+import { tabListClass, tabTriggerClass } from '../components/ds';
 import { LastBuildDialog, RetireDialog } from './Dialogs';
 
 /* L1 · App Library page (replaces App Groups) */
@@ -28,7 +29,6 @@ export function AppLibraryPage() {
   const setStatus = (appId: string, version: string, status: Build['status']) =>
     setBuilds((b) => ({ ...b, [appId]: b[appId].map((x) => (x.version === version ? { ...x, status } : x)) }));
 
-  const tab = 'h-11 flex-none gap-2 rounded-none border-0 border-b-2 border-transparent bg-transparent px-4 text-[14px] font-normal text-ink shadow-none data-[state=active]:border-uem data-[state=active]:font-semibold data-[state=active]:text-uem data-[state=active]:shadow-none';
   const th = 'px-4 py-3 text-left text-[14px] font-semibold';
   const pendingApp = libraryApps.find((a) => a.id === pending?.app);
   const fallback = pending ? builds[pending.app].find((b) => b.status === 'Available' && b.version !== pending.version)?.version ?? '' : '';
@@ -50,9 +50,9 @@ export function AppLibraryPage() {
           </div>
         )}
         <Tabs defaultValue="inhouse" className="mt-4 gap-0">
-          <TabsList className="h-auto w-full justify-start rounded-none border-b border-line bg-transparent p-0">
-            <TabsTrigger value="inhouse" className={tab}>In-house apps <CountBadge n={libraryApps.length} active /></TabsTrigger>
-            <TabsTrigger value="vpp" className={tab}>VPP licences <LaterBadge /></TabsTrigger>
+          <TabsList className={tabListClass}>
+            <TabsTrigger value="inhouse" className={tabTriggerClass}>In-house apps <CountBadge n={libraryApps.length} active /></TabsTrigger>
+            <TabsTrigger value="vpp" className={tabTriggerClass}>VPP licences <LaterBadge /></TabsTrigger>
           </TabsList>
           <TabsContent value="inhouse">
             <div className="mt-5 flex items-center gap-3">

@@ -168,3 +168,8 @@ export function ProfileFields({ onChange }: { onChange?: () => void }) {
     </div>
   );
 }
+
+/* Tabs · kit Tabs draws the single 2px indicator; these only size the trigger -- */
+export const tabListClass = 'h-auto w-full justify-start gap-0 rounded-none bg-transparent p-0';
+export const tabTriggerClass =
+  'h-11 flex-none gap-2 rounded-none px-4 text-[14px] font-normal text-ink after:inset-x-0 data-[state=active]:font-semibold data-[state=active]:text-uem';
