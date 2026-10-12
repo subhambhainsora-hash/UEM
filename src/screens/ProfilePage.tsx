@@ -6,7 +6,7 @@ import { AddInhouseDrawer, AddStoreDrawer, AppSettingsDrawer } from './Drawers';
 import { DiscardDialog, type Issue } from './Dialogs';
 import { KioskSection, SsoSection, type KioskMode } from './KioskSso';
 import { EmailSection, WebContentFilterSection, WebShortcutsSection } from './PolicySections';
-import { PerAppVpnSection, RestrictionSection, type RestrictionTab } from './Restriction';
+import { PerAppVpnSection, RestrictionSection, type LoadPhase, type RestrictionTab } from './Restriction';
 import { PasscodeSection, WifiSection } from './PasscodeWifi';
 import { ProfileFields, SectionTitle } from '../components/ds';
 import { appStoreApps, enterpriseApps, libraryApps, plural, profile, storeSearchResults, type CatalogApp } from '../data';
@@ -27,6 +27,8 @@ export interface ProfileState {
   passcode?: 'empty' | 'form' | 'list';
   wifi?: 'empty' | 'form' | 'list';
   vpn?: 'none' | 'miniorange';
+  /** Simulated fetch state for the section being shown. */
+  load?: LoadPhase;
 }
 
 export function ProfilePage({ initial = {} }: { initial?: ProfileState }) {
@@ -197,9 +199,9 @@ export function ProfilePage({ initial = {} }: { initial?: ProfileState }) {
           error={showIssues ? issues.find((i) => i.section === 'Extensible SSO')?.message : undefined}
         />
       )}
-      {section === 'Restriction' && <RestrictionSection onChange={touch} initialTab={initial.restrictionTab} values={restrictions} onValues={setRestrictions} />}
-      {section === 'Passcode' && <PasscodeSection onChange={touch} initial={initial.passcode} />}
-      {section === 'Wifi' && <WifiSection onChange={touch} initial={initial.wifi} />}
+      {section === 'Restriction' && <RestrictionSection onChange={touch} initialTab={initial.restrictionTab} values={restrictions} onValues={setRestrictions} load={initial.load} />}
+      {section === 'Passcode' && <PasscodeSection onChange={touch} initial={initial.passcode} load={initial.load} />}
+      {section === 'Wifi' && <WifiSection onChange={touch} initial={initial.wifi} load={initial.load} />}
       {section === 'Per-App VPN' && <PerAppVpnSection onChange={touch} value={vpn} onValue={setVpn} appCount={catalog.length + vppInProfile.length} onOpenCatalog={() => setSection('App Catalog')} />}
       {section === 'Email' && <EmailSection onChange={touch} />}
       {section === 'Web Shortcuts' && <WebShortcutsSection onChange={touch} />}

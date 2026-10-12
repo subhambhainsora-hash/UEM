@@ -32,7 +32,7 @@ export const UButton = React.forwardRef<HTMLButtonElement, Omit<React.ComponentP
         ref={ref}
         {...props}
         className={cn(
-          'rounded-[5px] font-semibold active:scale-100 gap-1.5 [&_svg:not([class*=size-])]:size-4',
+          'rounded-[5px] font-semibold gap-1.5 transition-[background-color,border-color,color,transform] duration-100 active:scale-[0.98] motion-reduce:active:scale-100 [&_svg:not([class*=size-])]:size-4',
           size === 'sm' && 'h-8 px-3 text-[13px]',
           size === 'md' && 'h-9 px-3.5 text-[14px]',
           size === 'lg' && 'h-10 px-4 text-[15px]',
@@ -274,7 +274,7 @@ export const IconButton = React.forwardRef<HTMLButtonElement, React.ComponentPro
       aria-label={label}
       title={label}
       {...props}
-      className={cn('flex size-8 shrink-0 items-center justify-center rounded-[6px] border-0 bg-transparent text-ink hover:bg-[#f3f3f5] data-[state=open]:bg-[#f3f3f5] disabled:text-[#adadad] disabled:hover:bg-transparent', className)}
+      className={cn('flex size-8 shrink-0 items-center justify-center rounded-[6px] border-0 bg-transparent text-ink transition-[background-color,transform] duration-100 hover:bg-[#f3f3f5] active:scale-95 motion-reduce:active:scale-100 data-[state=open]:bg-[#f3f3f5] outline-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#4c9aff] disabled:text-[#adadad] disabled:hover:bg-transparent', className)}
     >
       {children}
     </button>

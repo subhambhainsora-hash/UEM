@@ -52,6 +52,10 @@ const screens: { id: string; label: string; state?: ProfileState; library?: bool
   { id: 'w2', label: 'Wifi · add network', state: { section: 'Wifi', wifi: 'form' } },
   { id: 'w3', label: 'Wifi · list', state: { section: 'Wifi', wifi: 'list' } },
   { id: 'n1', label: 'Per-App VPN', state: { section: 'Per-App VPN', vpn: 'miniorange' } },
+  { id: 'r5', label: 'Restriction · loading', state: { section: 'Restriction', load: 'loading' } },
+  { id: 'r6', label: 'Restriction · load failed', state: { section: 'Restriction', load: 'failed' } },
+  { id: 'pc4', label: 'Passcode · loading', state: { section: 'Passcode', passcode: 'list', load: 'loading' } },
+  { id: 'w4', label: 'Wifi · load failed', state: { section: 'Wifi', wifi: 'list', load: 'failed' } },
 ];
 
 /* Profiles list · the page the sidebar's "Profiles" item opens --------------- */
@@ -132,7 +136,7 @@ function ProfilesPage() {
           <span className="text-[13px] text-muted">{rows.filter((p) => p.status === 'Published').length} published · {rows.filter((p) => p.status === 'Draft').length} draft</span>
         </div>
         <div className="mt-4 overflow-hidden rounded-[6px] border border-line">
-          <table className="w-full border-collapse">
+          <table className="w-full border-collapse tabular-nums">
             <thead className="bg-[#fafafa]">
               <tr>
                 <th className={th}>Profile</th><th className={th}>Platform</th><th className={th}>Device groups</th><th className={th}>Apps</th><th className={th}>Status</th><th className={th}>Created</th><th className={th}>Last updated</th><th className="w-12"><span className="sr-only">Actions</span></th>

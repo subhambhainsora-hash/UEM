@@ -5,7 +5,8 @@
  */
 import * as React from 'react';
 import { Copy, Eye, EyeOff, MoreVertical, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
-import { EmptyState, Field, FieldLabel, InfoAlert, ProfileFields, SectionTitle, StateChip, UndoRow } from '../components/ds';
+import { EmptyState, Field, FieldLabel, InfoAlert, LoadFailed, ProfileFields, SectionTitle, SkeletonTable, StateChip, UndoRow } from '../components/ds';
+import { useLoadPhase, type LoadPhase } from './Restriction';
 import { Drawer, IconButton, UButton, UMenu, UMenuItem, UMenuSeparator } from '../components/uem';
 import { Input } from '../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
@@ -144,7 +145,8 @@ function PasscodeDrawer({ open, onOpenChange, initial, onSave, names }: { open: 
   );
 }
 
-export function PasscodeSection({ onChange, initial = 'empty' }: { onChange?: () => void; initial?: 'empty' | 'form' | 'list' }) {
+export function PasscodeSection({ onChange, initial = 'empty', load = 'ready' }: { onChange?: () => void; initial?: 'empty' | 'form' | 'list'; load?: LoadPhase }) {
+  const { phase, retry } = useLoadPhase(load);
   const list = useList<Passcode>(onChange, {
     open: initial === 'form',
     items: initial === 'list' ? [{ ...blankPasscode(), id: 'pc-seed', name: 'Field sales passcode', minLength: 8, alphanumeric: 'yes', minSymbols: 1, expiry: '6m' }] : [],
@@ -155,14 +157,16 @@ export function PasscodeSection({ onChange, initial = 'empty' }: { onChange?: ()
     <div className="flex flex-col gap-5">
       <SectionTitle sub="Passcode rules devices enforce. Users with a weaker passcode are asked to change it.">Passcode</SectionTitle>
       <ProfileFields onChange={onChange} />
-      {list.items.length === 0 ? (
+      {phase === 'failed' && <LoadFailed what="passcode restrictions" onRetry={retry} />}
+      {phase === 'loading' && <SkeletonTable rows={2} cols={4} />}
+      {phase === 'ready' && list.items.length === 0 ? (
         <EmptyState icon={emptyLock} title="No passcode restriction yet" sub="Devices accept any passcode, or none, until you add one" className="min-h-[360px] border-0"
           action={<UButton size="lg" className="mt-2.5" onClick={list.create}>Add passcode restriction</UButton>} />
-      ) : (
+      ) : phase === 'ready' && (
         <>
           <ListToolbar q={list.q} onQ={list.setQ} placeholder="Search passcode restrictions" count={list.items.length} noun="restriction" onAdd={list.create} addLabel="Add new passcode restriction" />
           <div className="overflow-hidden rounded-[6px] border border-line">
-            <table className="w-full border-collapse">
+            <table className="w-full border-collapse tabular-nums">
               <thead className="bg-[#fafafa]"><tr><th className={th}>Passcode profile name</th><th className={th}>Minimum length</th><th className={th}>Passcode expiry</th><th className={th}>Wipe after</th><th className="w-12"><span className="sr-only">Actions</span></th></tr></thead>
               <tbody>
                 {list.shown.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-[14px] text-muted">No restriction matches “{list.q}”.</td></tr>}
@@ -261,7 +265,8 @@ function WifiDrawer({ open, onOpenChange, initial, onSave, existing }: { open: b
   );
 }
 
-export function WifiSection({ onChange, initial = 'empty' }: { onChange?: () => void; initial?: 'empty' | 'form' | 'list' }) {
+export function WifiSection({ onChange, initial = 'empty', load = 'ready' }: { onChange?: () => void; initial?: 'empty' | 'form' | 'list'; load?: LoadPhase }) {
+  const { phase, retry } = useLoadPhase(load);
   const list = useList<WifiNetwork>(onChange, {
     open: initial === 'form',
     items: initial === 'list' ? [{ ...blankWifi(), id: 'wifi-seed', name: 'Head office', ssid: 'Contoso-Corp', password: 'r3dw00d-pass', encryption: 'wpa2' }] : [],
@@ -272,14 +277,16 @@ export function WifiSection({ onChange, initial = 'empty' }: { onChange?: () => 
     <div className="flex flex-col gap-5">
       <SectionTitle sub="Wi-Fi networks devices join on their own, with the password kept out of users’ hands.">Wifi</SectionTitle>
       <ProfileFields onChange={onChange} />
-      {list.items.length === 0 ? (
+      {phase === 'failed' && <LoadFailed what="network configurations" onRetry={retry} />}
+      {phase === 'loading' && <SkeletonTable rows={2} cols={5} />}
+      {phase === 'ready' && list.items.length === 0 ? (
         <EmptyState icon={emptyWifi} title="No network configured" sub="Add a network so devices connect without users typing a password" className="min-h-[360px] border-0"
           action={<UButton size="lg" className="mt-2.5" onClick={list.create}>Add network configuration</UButton>} />
-      ) : (
+      ) : phase === 'ready' && (
         <>
           <ListToolbar q={list.q} onQ={list.setQ} placeholder="Search networks" count={list.items.length} noun="network" onAdd={list.create} addLabel="Add new network configuration" />
           <div className="overflow-hidden rounded-[6px] border border-line">
-            <table className="w-full border-collapse">
+            <table className="w-full border-collapse tabular-nums">
               <thead className="bg-[#fafafa]"><tr><th className={th}>Network profile name</th><th className={th}>SSID</th><th className={th}>Password</th><th className={th}>Encryption</th><th className={th}>Joins</th><th className="w-12"><span className="sr-only">Actions</span></th></tr></thead>
               <tbody>
                 {list.shown.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-[14px] text-muted">No network matches “{list.q}”.</td></tr>}

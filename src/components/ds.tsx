@@ -3,7 +3,7 @@
  * frame "Extensible SSO"). Each one wraps a shared kit component where one exists.
  */
 import * as React from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Input } from './ui/input';
 import { cn } from './ui/utils';
 import { UButton } from './uem';
@@ -192,5 +192,57 @@ export function StateChip({ state }: { state: 'new' | 'edited' | null | undefine
     <span className={cn('inline-flex items-center rounded-[8px] px-2 py-px font-["Inter"] text-[11px] font-medium', state === 'new' ? 'bg-[#fff7d6] text-[#7a5a00]' : 'bg-info-bg text-[#0747a6]')}>
       {state === 'new' ? 'New · not submitted' : 'Edited · not submitted'}
     </span>
+  );
+}
+
+/* Skeleton · shape-matched placeholder while a section loads ------------------ */
+export function Skeleton({ className }: { className?: string }) {
+  return <span aria-hidden className={cn('block rounded-[4px] bg-[#eef0f3] skeleton-shimmer', className)} />;
+}
+export function SkeletonRows({ rows = 6, controls = true }: { rows?: number; controls?: boolean }) {
+  return (
+    <div role="status" aria-label="Loading" className="flex flex-col">
+      <span className="sr-only">Loading…</span>
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i} className="flex min-h-[58px] items-center gap-4 border-b border-row py-2 last:border-0">
+          <div className="flex grow items-center gap-2.5">
+            <Skeleton className={cn('h-4', ['w-[150px]', 'w-[210px]', 'w-[120px]', 'w-[260px]', 'w-[180px]', 'w-[140px]'][i % 6])} />
+            <Skeleton className="h-[18px] w-[76px] rounded-[8px]" />
+            <Skeleton className="h-[18px] w-[52px] rounded-[8px]" />
+          </div>
+          {controls && <Skeleton className="h-9 w-[128px] rounded-[5px]" />}
+        </div>
+      ))}
+    </div>
+  );
+}
+export function SkeletonTable({ rows = 3, cols = 4 }: { rows?: number; cols?: number }) {
+  return (
+    <div role="status" aria-label="Loading" className="overflow-hidden rounded-[6px] border border-line">
+      <span className="sr-only">Loading…</span>
+      <div className="flex gap-6 bg-[#fafafa] px-4 py-3.5">{Array.from({ length: cols }, (_, i) => <Skeleton key={i} className="h-3.5 w-[110px]" />)}</div>
+      {Array.from({ length: rows }, (_, r) => (
+        <div key={r} className="flex items-center gap-6 border-t border-row px-4 py-4">
+          {Array.from({ length: cols }, (_, c) => <Skeleton key={c} className={cn('h-3.5', c === 0 ? 'w-[180px]' : 'w-[90px]')} />)}
+          <Skeleton className="ml-auto size-6 rounded-[6px]" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* Load failed · the section couldn't be fetched; the rest of the profile still works -- */
+export function LoadFailed({ what, onRetry, retrying }: { what: string; onRetry: () => void; retrying?: boolean }) {
+  return (
+    <div role="alert" className="flex flex-col items-start gap-3 rounded-[6px] border-[1.26px] border-[#f5c6c0] bg-[#fdecea] px-5 py-4">
+      <div className="flex items-start gap-2.5">
+        <AlertTriangle className="mt-0.5 size-[18px] shrink-0 text-bad" strokeWidth={1.7} aria-hidden />
+        <div className="flex flex-col gap-0.5">
+          <p className="m-0 text-[14px] font-semibold text-bad">Couldn’t load {what}</p>
+          <p className="m-0 text-[13px] leading-5 text-[#7b341e]">The server didn’t answer in time. Nothing was changed on devices; the other sections of this profile still work.</p>
+        </div>
+      </div>
+      <UButton tone="outline" size="md" onClick={onRetry} disabled={retrying}><RefreshCw className={cn(retrying && 'animate-spin')} strokeWidth={1.7} />{retrying ? 'Retrying…' : 'Try again'}</UButton>
+    </div>
   );
 }
