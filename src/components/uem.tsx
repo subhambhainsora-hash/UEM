@@ -14,12 +14,13 @@ import type { Source } from '../data';
 
 /* Buttons ---------------------------------------------------------------- */
 type Tone = 'primary' | 'outline' | 'neutral' | 'danger' | 'disabled';
+/* mO WEB Design System buttons: 40px, 5px radius, 15px semibold. */
 const tones: Record<Tone, string> = {
-  primary: 'bg-uem text-white hover:bg-[#1565c0] active:bg-[#0d47a1] border-0',
-  outline: 'bg-white text-uem border border-uem hover:bg-uem-soft',
-  neutral: 'bg-white text-ink border border-[#bdbdbd] hover:bg-[#f5f5f5]',
-  danger: 'bg-bad text-white hover:bg-[#c62828] border-0',
-  disabled: 'bg-[#e0e0e0] text-[#757575] border-0',
+  primary: 'bg-uem text-white hover:bg-uem-hover active:bg-[#0747a6] border-0',
+  outline: 'bg-white text-uem border-[1.5px] border-uem hover:bg-uem-soft',
+  neutral: 'bg-white text-ink border border-line hover:bg-[#f3f3f5]',
+  danger: 'bg-bad text-white hover:bg-[#ff5630] border-0',
+  disabled: 'bg-[rgba(9,30,66,0.04)] text-[#adadad] border-0',
 };
 
 export function UButton({
@@ -32,10 +33,10 @@ export function UButton({
     <Button
       {...props}
       className={cn(
-        'rounded-[4px] font-medium active:scale-100 gap-2 [&_svg:not([class*=size-])]:size-[18px]',
-        size === 'sm' && 'h-[34px] px-3 text-[14px]',
-        size === 'md' && 'h-[38px] px-3.5 text-[15px]',
-        size === 'lg' && 'h-[40px] px-4 text-[15px]',
+        'rounded-[5px] font-semibold active:scale-100 gap-1.5 [&_svg:not([class*=size-])]:size-4',
+        size === 'sm' && 'h-8 px-3 text-[13px]',
+        size === 'md' && 'h-9 px-3.5 text-[14px]',
+        size === 'lg' && 'h-10 px-4 text-[15px]',
         tones[tone],
         className,
       )}
@@ -65,7 +66,7 @@ export function AppIcon({ initials, color, size = 42 }: { initials: string; colo
 
 export function Chip({ children }: { children: React.ReactNode }) {
   return (
-    <Badge className="rounded-[12px] border-0 bg-chip px-2.5 py-[3px] text-[12px] font-normal whitespace-nowrap text-ink">
+    <Badge className="rounded-[8px] border-0 bg-chip px-2.5 py-[3px] font-['Inter'] text-[12px] font-medium whitespace-nowrap text-[#262626]">
       {children}
     </Badge>
   );
@@ -76,7 +77,7 @@ export function SourceBadge({ source, size = 'sm' }: { source: Source; size?: 's
   return (
     <Badge
       className={cn(
-        'rounded-[10px] border-0 font-medium whitespace-nowrap',
+        'rounded-[8px] border-0 font-medium whitespace-nowrap',
         size === 'sm' ? 'px-2 py-[1px] text-[11px]' : 'px-2.5 py-[3px] text-[13px]',
         store ? 'bg-uem-soft text-[#1565c0]' : 'bg-[#fff3e0] text-[#7b341e]',
       )}
@@ -90,7 +91,7 @@ export function CountBadge({ n, active }: { n: number; active?: boolean }) {
   return (
     <span
       className={cn(
-        'min-w-[22px] rounded-[11px] px-[7px] py-px text-center text-[12px] font-semibold',
+        'min-w-[22px] rounded-[8px] px-[7px] py-px text-center text-[12px] font-semibold',
         active ? 'bg-uem-soft text-uem' : 'bg-[#f5f5f5] text-muted',
       )}
     >
@@ -111,12 +112,7 @@ export function USwitch(props: React.ComponentProps<typeof Switch>) {
     <Switch
       {...props}
       className={cn(
-        'h-[14px] w-[34px] overflow-visible border-0 [&>svg]:hidden',
-        'data-[state=checked]:bg-[#90caf9] data-[state=checked]:hover:bg-[#90caf9]',
-        'data-[state=unchecked]:bg-[#9e9e9e] data-[state=unchecked]:hover:bg-[#9e9e9e]',
-        '[&>span]:size-5 [&>span]:shadow-[0_1px_3px_rgba(0,0,0,0.35)]',
-        'data-[state=checked]:[&>span]:translate-x-[16px] data-[state=checked]:[&>span]:bg-uem',
-        'data-[state=unchecked]:[&>span]:-translate-x-[2px] data-[state=unchecked]:[&>span]:bg-[#fafafa]',
+        '[&>svg]:hidden',
         props.className,
       )}
     />
@@ -128,9 +124,9 @@ export function UCheckbox(props: React.ComponentProps<typeof Checkbox>) {
     <Checkbox
       {...props}
       className={cn(
-        'size-[18px] rounded-[2px] border-2 border-[#757575] bg-white',
+        'size-[18px] rounded-[4px] border border-[#8a8a8a] bg-white',
         'data-[state=checked]:border-uem data-[state=checked]:bg-uem data-[state=checked]:text-white',
-        'disabled:border-[#bdbdbd] disabled:data-[state=checked]:border-[#bdbdbd] disabled:data-[state=checked]:bg-[#bdbdbd]',
+        'disabled:border-line disabled:data-[state=checked]:border-line disabled:data-[state=checked]:bg-[#c1c7d0]',
         props.className,
       )}
     />
@@ -186,7 +182,7 @@ export function Drawer({
         className="gap-0 border-l border-soft bg-white p-0 font-sans text-ink sm:max-w-none [&>button:last-child]:top-[28px] [&>button:last-child]:right-[24px] [&>button:last-child]:opacity-100 [&>button:last-child>svg]:size-5"
       >
         <div className="shrink-0 px-6 pt-[22px] pb-4">
-          <SheetTitle className="text-[22px] font-medium text-heading">{title}</SheetTitle>
+          <SheetTitle className="text-[20px] font-semibold text-heading">{title}</SheetTitle>
           {subtitle ? (
             <SheetDescription className="mt-1 text-[14px] text-muted">{subtitle}</SheetDescription>
           ) : (

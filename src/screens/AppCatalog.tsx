@@ -3,6 +3,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
 import { AppIcon, Chip, CountBadge, LaterBadge, SigningBadge, UButton } from '../components/uem';
 import { cn } from '../components/ui/utils';
 import { signingState, type CatalogApp } from '../data';
+import { ProfileFields, SectionTitle } from '../components/ds';
 
 export type SourceTab = 'store' | 'enterprise' | 'vpp';
 
@@ -13,7 +14,7 @@ function AppRow({ app, onConfigure, onRemove, flag }: { app: CatalogApp; onConfi
     <div className={cn('flex min-h-[72px] items-center gap-3.5 border-b border-row py-2.5', flag && blocked && '-mx-3 rounded-[4px] border border-[#f5c6c2] bg-[#fdecea]/60 px-3')}>
       <AppIcon initials={app.initials} color={app.color} />
       <span className="flex min-w-[150px] grow flex-col gap-0.5">
-        <span className="text-[16px] font-medium text-heading">{app.name}</span>
+        <span className="text-[15px] font-semibold text-heading">{app.name}</span>
         <span className="text-[13px] text-muted">
           {app.bundleId}
           {app.meta ? ` · ${app.meta}` : ''}
@@ -42,8 +43,8 @@ function AppRow({ app, onConfigure, onRemove, flag }: { app: CatalogApp; onConfi
 }
 
 const tabClass =
-  'h-[50px] flex-none gap-2 rounded-none border-0 border-b-2 border-transparent bg-transparent px-5 text-[16px] font-normal text-ink shadow-none ' +
-  'data-[state=active]:border-uem data-[state=active]:bg-transparent data-[state=active]:font-medium data-[state=active]:text-uem data-[state=active]:shadow-none';
+  'h-11 flex-none gap-2 rounded-none border-0 border-b-2 border-transparent bg-transparent px-4 text-[14px] font-normal text-ink shadow-none ' +
+  'data-[state=active]:border-uem data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-uem data-[state=active]:shadow-none';
 
 export function AppCatalogSection({
   tab,
@@ -57,6 +58,7 @@ export function AppCatalogSection({
   onConfigure,
   onRemove,
   showIssues,
+  onChange,
 }: {
   tab: SourceTab;
   onTab: (t: SourceTab) => void;
@@ -70,8 +72,12 @@ export function AppCatalogSection({
   onRemove: (a: CatalogApp) => void;
   /** After a blocked submit, highlight apps that can't install. */
   showIssues?: boolean;
+  onChange?: () => void;
 }) {
   return (
+    <div className="flex flex-col gap-5">
+    <SectionTitle sub="Apps installed on every device that uses this profile">App Catalog</SectionTitle>
+    <ProfileFields onChange={onChange} />
     <Tabs value={tab} onValueChange={(v) => onTab(v as SourceTab)} className="gap-0">
       <TabsList aria-label="App sources" className="h-auto w-full justify-start rounded-none border-b border-line bg-transparent p-0">
         <TabsTrigger value="store" className={tabClass}>
@@ -87,7 +93,7 @@ export function AppCatalogSection({
 
       <TabsContent value="store" className="pt-[22px]">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <h2 className="m-0 text-[22px] font-medium text-heading">App Store apps</h2>
+          <h3 className="m-0 text-[18px] font-semibold text-heading">App Store apps</h3>
           <div className="flex items-center gap-3">
             <div className="relative w-[200px]">
               <label htmlFor="country" className="absolute -top-2 left-2.5 bg-white px-1 text-[12px] text-muted">
@@ -97,7 +103,7 @@ export function AppCatalogSection({
                 id="country"
                 value={country}
                 onChange={(e) => onCountry(e.target.value)}
-                className="h-10 w-[200px] rounded-[4px] border border-[#c4c4c4] bg-white px-3 text-[15px] text-ink"
+                className="h-10 w-[200px] rounded-[6px] border border-line bg-white px-3 text-[14px] text-ink"
               >
                 <option>United States</option>
                 <option>India</option>
@@ -126,7 +132,7 @@ export function AppCatalogSection({
 
       <TabsContent value="enterprise" className="pt-[22px]">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <h2 className="m-0 text-[22px] font-medium text-heading">Enterprise apps</h2>
+          <h3 className="m-0 text-[18px] font-semibold text-heading">Enterprise apps</h3>
           <UButton size="lg" onClick={onAddInhouse}>
             <Plus strokeWidth={1.7} />
             Add in-house app
@@ -145,7 +151,7 @@ export function AppCatalogSection({
           <span className="flex size-[72px] items-center justify-center rounded-full bg-[#f3eefc] text-later">
             <CalendarCheck className="size-6" strokeWidth={1.7} />
           </span>
-          <h2 className="mt-4 mb-0 text-[21px] font-medium text-heading">VPP apps come with Apps and Books</h2>
+          <h3 className="mt-4 mb-0 text-[18px] font-semibold text-heading">VPP apps come with Apps and Books</h3>
           <p className="mt-3 mb-0 max-w-[440px] text-[14px] text-muted">
             Connect an Apps and Books location token to assign licences and install App Store apps silently, with no Apple ID prompt.
           </p>
@@ -155,5 +161,6 @@ export function AppCatalogSection({
         </div>
       </TabsContent>
     </Tabs>
+    </div>
   );
 }

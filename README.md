@@ -32,6 +32,12 @@ The home page lists all 16 screens. Each link opens the app in that state, and a
 
 Reference renders of each design screen are in `docs/design/`.
 
+## Design system
+
+Visuals follow the **mO WEB Design System** in Figma (UEM Dashboard design, frame "Extensible SSO"). `src/components/ds.tsx` holds the primitives taken from it: page and section titles, labelled fields with the Required badge, the input + Add button row, info card and info alert, section headers with icon tiles, dashed empty states, radio cards and the footer actions. `src/assets/ds/` holds the SVG icons exported from the frame. Tokens live in `src/styles/index.css`: primary `#0052cc`, text `#171821`, borders `#ebebeb`, active nav `#e0f2ff`, Segoe UI with Inter as the bundled fallback.
+
+Icons the Figma export returned as placeholders (Getting started, Email policy, Notification, Manage devices, Devices policy, Manage User, Approval requests, and the first five profile sections) use the matching lucide icon at the same size.
+
 ## Shared components
 
 `src/components/ui/` is the shared miniOrange component kit, copied unchanged from the Secure Share and AI Agent Governance apps. It is shadcn/ui on Radix, with Tailwind 4 and the same token file (`src/styles/default_theme.css`).

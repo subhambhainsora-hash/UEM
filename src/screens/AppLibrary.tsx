@@ -28,15 +28,15 @@ export function AppLibraryPage() {
   const setStatus = (appId: string, version: string, status: Build['status']) =>
     setBuilds((b) => ({ ...b, [appId]: b[appId].map((x) => (x.version === version ? { ...x, status } : x)) }));
 
-  const tab = 'h-[50px] flex-none gap-2 rounded-none border-0 border-b-2 border-transparent bg-transparent px-5 text-[16px] font-normal text-ink shadow-none data-[state=active]:border-uem data-[state=active]:font-medium data-[state=active]:text-uem data-[state=active]:shadow-none';
+  const tab = 'h-11 flex-none gap-2 rounded-none border-0 border-b-2 border-transparent bg-transparent px-4 text-[14px] font-normal text-ink shadow-none data-[state=active]:border-uem data-[state=active]:font-semibold data-[state=active]:text-uem data-[state=active]:shadow-none';
   const th = 'px-4 py-3 text-left text-[14px] font-semibold';
   const pendingApp = libraryApps.find((a) => a.id === pending?.app);
   const fallback = pending ? builds[pending.app].find((b) => b.status === 'Available' && b.version !== pending.version)?.version ?? '' : '';
 
   return (
     <AppShell page="library">
-      <div className="flex min-h-0 grow flex-col overflow-y-auto pt-[26px] pr-10 pb-4 pl-9">
-        <h1 className="m-0 text-[25px] font-medium text-heading">App Library</h1>
+      <div className="flex min-h-0 grow flex-col overflow-y-auto px-[50px] pt-8 pb-4">
+        <h1 className="m-0 text-[24px] leading-8 font-bold text-heading">Applications</h1>
         <p className="mt-1.5 mb-0 text-[15px] text-muted">
           In-house apps your iOS profiles can install. Upload builds and roll back here; add apps to devices from a profile's App Catalog.
         </p>
@@ -56,7 +56,7 @@ export function AppLibraryPage() {
           </TabsList>
           <TabsContent value="inhouse">
             <div className="mt-5 flex items-center gap-3">
-              <label className="flex h-10 w-[340px] items-center gap-2.5 rounded-[4px] border border-[#c4c4c4] px-3">
+              <label className="flex h-10 w-[340px] items-center gap-2.5 rounded-[6px] border border-line px-3">
                 <Search className="size-4 text-muted" strokeWidth={1.7} />
                 <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or bundle ID" className="h-auto border-0 bg-transparent p-0 text-[15px] shadow-none focus-visible:ring-0" />
               </label>
@@ -89,7 +89,7 @@ export function AppLibraryPage() {
                                 {open ? <ChevronDown className="size-4 rotate-180" /> : <ChevronRight className="size-4" />}
                               </button>
                               <AppIcon initials={a.initials} color={a.color} size={32} />
-                              <span className="text-[16px]">{a.name}</span>
+                              <span className="text-[15px] font-semibold">{a.name}</span>
                             </span>
                           </td>
                           <td className="px-4 text-muted">{a.bundleId}</td>

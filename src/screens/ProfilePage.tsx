@@ -5,6 +5,7 @@ import { AppCatalogSection, type SourceTab } from './AppCatalog';
 import { AddInhouseDrawer, AddStoreDrawer, AppSettingsDrawer } from './Drawers';
 import { CountryDialog, DiscardDialog, RemoveDialog, SavedDialog, SubmitBlockedDialog, type Issue } from './Dialogs';
 import { KioskSection, SsoSection, type KioskMode } from './KioskSso';
+import { ProfileFields, SectionTitle } from '../components/ds';
 import { appStoreApps, enterpriseApps, libraryApps, storeSearchResults, type CatalogApp } from '../data';
 
 export interface ProfileState {
@@ -83,7 +84,6 @@ export function ProfilePage({ initial = {} }: { initial?: ProfileState }) {
       onSection={setSection}
       dirty={dirty}
       issueSections={showIssues ? issues.map((i) => i.section) : []}
-      onPrevious={() => navigate(-1)}
       onCancel={cancel}
       onSubmit={submit}
     >
@@ -100,6 +100,7 @@ export function ProfilePage({ initial = {} }: { initial?: ProfileState }) {
           onConfigure={setSettingsApp}
           onRemove={setRemoving}
           showIssues={showIssues}
+          onChange={touch}
         />
       )}
       {section === 'Kiosk' && (
@@ -127,9 +128,9 @@ export function ProfilePage({ initial = {} }: { initial?: ProfileState }) {
         />
       )}
       {!['App Catalog', 'Kiosk', 'Extensible SSO'].includes(section) && (
-        <div className="pt-4">
-          <h2 className="m-0 text-[20px] font-semibold text-heading">{section}</h2>
-          <p className="mt-2 text-[14px] text-muted">This section isn't part of the App Catalog design and keeps its current screens.</p>
+        <div className="flex flex-col gap-5">
+          <SectionTitle sub="This section keeps its current screens; it isn't part of the App Catalog design.">{section}</SectionTitle>
+          <ProfileFields onChange={touch} />
         </div>
       )}
 

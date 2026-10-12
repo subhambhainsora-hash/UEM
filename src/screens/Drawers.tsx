@@ -44,7 +44,7 @@ export function AddStoreDrawer({
       }
     >
       <div className="border-t border-soft px-6 pt-4">
-        <label className="flex h-10 items-center gap-2.5 rounded-[4px] border-2 border-uem px-3">
+        <label className="flex h-10 items-center gap-2.5 rounded-[4px] border border-uem px-3">
           <Search className="size-4 text-muted" strokeWidth={1.7} />
           <Input value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search App Store" className="h-auto border-0 bg-transparent p-0 text-[15px] shadow-none focus-visible:ring-0" />
         </label>
@@ -114,7 +114,7 @@ export function AddInhouseDrawer({
 
         {mode === 'library' && (
           <>
-            <label className="mt-[18px] flex h-10 items-center gap-2.5 rounded-[4px] border border-[#c4c4c4] px-3">
+            <label className="mt-[18px] flex h-10 items-center gap-2.5 rounded-[6px] border border-line px-3">
               <Search className="size-4 text-muted" strokeWidth={1.7} />
               <Input placeholder="Search the App Library" className="h-auto border-0 bg-transparent p-0 text-[15px] shadow-none focus-visible:ring-0" />
             </label>
@@ -165,7 +165,7 @@ export function AddInhouseDrawer({
             </div>
             <div className="relative mt-5">
               <label className="absolute -top-2 left-2.5 bg-white px-1 text-[12px] text-muted">App name in the library</label>
-              <Input defaultValue="Acme Expense" className="h-[42px] rounded-[4px] border-[#c4c4c4] bg-white text-[15px]" />
+              <Input defaultValue="Acme Expense" className="h-[42px] rounded-[6px] border-line bg-white text-[15px]" />
             </div>
             <p className="mt-2.5 text-[12px] text-muted">The app is saved to the App Library and added to this profile.</p>
           </>
@@ -175,7 +175,7 @@ export function AddInhouseDrawer({
           <>
             <div className="relative mt-5">
               <label className="absolute -top-2 left-2.5 bg-white px-1 text-[12px] text-muted">Manifest URL</label>
-              <Input placeholder="https://apps.acme.com/expense/manifest.plist" className="h-[42px] rounded-[4px] border-[#c4c4c4] bg-white text-[15px]" />
+              <Input placeholder="https://apps.acme.com/expense/manifest.plist" className="h-[42px] rounded-[6px] border-line bg-white text-[15px]" />
             </div>
             <p className="mt-2.5 text-[12px] text-muted">We read the bundle ID and version from the manifest. The app is saved to the App Library and added to this profile.</p>
           </>
@@ -281,11 +281,11 @@ export function AppSettingsDrawer({ app, onOpenChange, onSave }: { app: CatalogA
             </TabsContent>
             <TabsContent value="domains" className="px-6 pt-4 text-[14px] text-muted">
               Associated domains let the app open links and use credentials for these domains.
-              <Input placeholder="Add domain, e.g. acme.com" className="mt-3 h-10 rounded-[4px] border-[#c4c4c4] bg-white" />
+              <Input placeholder="Add domain, e.g. acme.com" className="mt-3 h-10 rounded-[6px] border-line bg-white" />
             </TabsContent>
             <TabsContent value="config" className="px-6 pt-4 text-[14px] text-muted">
               Managed app configuration is sent to the app as key-value pairs.
-              <textarea placeholder="<dict>…</dict>" className="mt-3 h-40 w-full rounded-[4px] border border-[#c4c4c4] p-3 font-mono text-[13px]" />
+              <textarea placeholder="<dict>…</dict>" className="mt-3 h-40 w-full rounded-[6px] border border-line p-3 font-mono text-[13px]" />
             </TabsContent>
           </Tabs>
         </>

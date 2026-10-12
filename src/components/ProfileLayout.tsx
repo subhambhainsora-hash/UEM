@@ -1,32 +1,29 @@
 import * as React from 'react';
-import {
-  AlertTriangle, CheckCircle2, Filter, Globe, Hexagon, LayoutGrid, Lock, LockOpen, Mail, MapPin, Settings2,
-  ShieldCheck, SkipBack, SkipForward, Smartphone, Wifi, X,
-} from 'lucide-react';
+import { AlertTriangle, Globe, LayoutGrid, Lock, Mail, Settings2, ShieldCheck, Wifi } from 'lucide-react';
 import { cn } from './ui/utils';
 import { AppShell } from './AppShell';
+import { PageTitle, FooterActions } from './ds';
 import { UButton } from './uem';
+import icShortcut from '../assets/ds/nav-shortcut.svg';
+import icFilter from '../assets/ds/nav-filter.svg';
+import icProxy from '../assets/ds/nav-proxy.svg';
+import icKiosk from '../assets/ds/nav-kiosk.svg';
+import icUnlock from '../assets/ds/nav-unlock.svg';
 
 export type Section =
-  | 'App Catalog' | 'Restrictions' | 'Passcode' | 'VPN' | 'Wifi' | 'Mail' | 'Global HTTP Proxy'
-  | 'Web Shortcuts' | 'Kiosk' | 'Web Content Filter' | 'Extensible SSO' | 'Advanced Settings';
+  | 'App Catalog' | 'Restriction' | 'Passcode' | 'Per-App VPN' | 'Wifi' | 'Email' | 'Web Shortcuts'
+  | 'Web Content Filter' | 'Global HTTP Proxy' | 'Kiosk' | 'Extensible SSO' | 'Advanced Settings';
 
-const sections: [Section, React.ElementType][] = [
-  ['App Catalog', LayoutGrid], ['Restrictions', ShieldCheck], ['Passcode', Lock], ['VPN', Globe],
-  ['Wifi', Wifi], ['Mail', Mail], ['Global HTTP Proxy', MapPin], ['Web Shortcuts', Hexagon],
-  ['Kiosk', Smartphone], ['Web Content Filter', Filter], ['Extensible SSO', LockOpen], ['Advanced Settings', Settings2],
+type Icon = { lucide: React.ElementType } | { svg: string };
+const sections: [Section, Icon][] = [
+  ['App Catalog', { lucide: LayoutGrid }],
+  ['Restriction', { lucide: ShieldCheck }], ['Passcode', { lucide: Lock }], ['Per-App VPN', { lucide: Globe }], ['Wifi', { lucide: Wifi }], ['Email', { lucide: Mail }],
+  ['Web Shortcuts', { svg: icShortcut }], ['Web Content Filter', { svg: icFilter }], ['Global HTTP Proxy', { svg: icProxy }],
+  ['Kiosk', { svg: icKiosk }], ['Extensible SSO', { svg: icUnlock }],
+  ['Advanced Settings', { lucide: Settings2 }],
 ];
 
-export function ProfileLayout({
-  section,
-  onSection,
-  children,
-  dirty = 0,
-  issueSections = [],
-  onPrevious,
-  onCancel,
-  onSubmit,
-}: {
+export function ProfileLayout({ section, onSection, children, dirty = 0, issueSections = [], onCancel, onSubmit }: {
   section: Section;
   onSection: (s: Section) => void;
   children: React.ReactNode;
@@ -34,75 +31,57 @@ export function ProfileLayout({
   dirty?: number;
   /** Sections with a blocking issue after a failed submit. */
   issueSections?: string[];
-  onPrevious?: () => void;
   onCancel?: () => void;
   onSubmit?: () => void;
 }) {
   return (
     <AppShell page="profiles">
-      <div className="flex min-h-0 grow flex-col overflow-y-auto pt-[26px] pr-10 pb-2 pl-9">
-        <h1 className="m-0 text-[25px] leading-[1.2] font-medium text-heading">Apple iOS Profile</h1>
-        <p className="mt-1.5 mb-0 text-[15px] text-muted">Configure policies, passcode rules, and restrictions for your Apple devices</p>
-
-        <ol aria-label="Steps" className="mt-5 flex list-none items-center p-0">
-          <li className="flex h-10 shrink-0 items-center gap-2 rounded-[22px] border-2 border-ok pr-[18px] pl-4 text-[16px] font-semibold text-ok">
-            <CheckCircle2 className="size-5 fill-ok text-white" strokeWidth={2} />
-            Name &amp; Description
-          </li>
-          <li aria-hidden className="h-0.5 grow bg-ok" />
-          <li aria-current="step" className="flex h-10 shrink-0 items-center gap-2 rounded-[22px] border-2 border-uem pr-[18px] pl-3 text-[16px] font-semibold text-uem">
-            <span className="flex size-5 items-center justify-center rounded-full border-2 border-uem text-[12px] font-bold">2</span>
-            Profile Enforcer
-          </li>
-        </ol>
-
-        <div className="mt-4 flex grow">
-          <div className="flex w-[238px] shrink-0 flex-col self-start border-e border-line pt-1 pr-[18px]">
-            {sections.map(([name, Icon]) => {
+      <div className="flex min-h-0 grow flex-col overflow-y-auto px-[50px] pt-8 pb-4">
+        <PageTitle>Profile configuration</PageTitle>
+        <div className="mt-6 flex grow">
+          {/* Section nav · "Nav Items main states" */}
+          <div role="tablist" aria-orientation="vertical" className="flex w-[229px] shrink-0 flex-col gap-2 self-start border-e border-line pr-[25px]">
+            {sections.map(([name, icon]) => {
               const active = name === section;
               const flagged = issueSections.includes(name);
               return (
                 <button
                   key={name}
                   type="button"
+                  role="tab"
+                  aria-selected={active}
                   onClick={() => onSection(name)}
                   className={cn(
-                    'flex h-[46px] w-full shrink-0 items-center gap-4 rounded-[4px] border-0 px-4 text-start text-[16px]',
-                    active ? 'bg-uem-soft font-semibold text-uem' : 'bg-transparent text-ink hover:bg-[#fafafa]',
+                    'flex h-9 w-full items-center gap-2 rounded-[8px] border-0 px-3 py-2 text-left text-[14px] leading-5 tracking-[0.005em] text-ink',
+                    active ? 'bg-nav-bg' : 'bg-transparent hover:bg-[#f3f3f5]',
                   )}
                 >
-                  <Icon className="size-[18px]" strokeWidth={1.7} />
+                  {'svg' in icon ? (
+                    <img src={icon.svg} alt="" width={17} height={17} className="size-[16.67px] shrink-0" />
+                  ) : (
+                    <icon.lucide className="size-[16.67px] shrink-0" strokeWidth={1.7} />
+                  )}
                   <span className="grow">{name}</span>
                   {flagged && <AlertTriangle aria-label="Needs attention" className="size-4 text-bad" strokeWidth={1.7} />}
                 </button>
               );
             })}
           </div>
-          <section aria-label={section} className="flex min-w-0 grow flex-col pr-4 pl-5">
+          <section aria-label={section} className="flex min-w-0 grow flex-col pl-6">
             {children}
           </section>
         </div>
       </div>
-      <footer className="mx-10 ml-[30px] flex shrink-0 items-center justify-between border-t border-line py-4">
-        <UButton tone="outline" size="lg" className="text-[16px]" onClick={onPrevious}>
-          <SkipBack className="size-3.5 fill-current" strokeWidth={1.7} />
-          Previous
-        </UButton>
-        <div className="flex items-center gap-5">
+      <footer className="shrink-0 border-t border-line px-[50px] py-4">
+        <FooterActions>
           {dirty > 0 && (
-            <span className="text-[13px] text-muted" aria-live="polite">
+            <span className="mr-2 text-[13px] text-muted" aria-live="polite">
               {dirty} unsaved {dirty === 1 ? 'change' : 'changes'}
             </span>
           )}
-          <UButton tone="outline" size="lg" className="text-[16px]" onClick={onCancel}>
-            <X strokeWidth={1.7} />
-            Cancel
-          </UButton>
-          <UButton size="lg" className="text-[16px]" onClick={onSubmit}>
-            Submit
-            <SkipForward className="size-3.5 fill-current" strokeWidth={1.7} />
-          </UButton>
-        </div>
+          <UButton tone="outline" size="lg" onClick={onCancel}>Cancel</UButton>
+          <UButton size="lg" onClick={onSubmit}>Submit</UButton>
+        </FooterActions>
       </footer>
     </AppShell>
   );
