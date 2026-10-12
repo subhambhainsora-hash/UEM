@@ -5,6 +5,7 @@ import { AppCatalogSection, type SourceTab } from './AppCatalog';
 import { AddInhouseDrawer, AddStoreDrawer, AppSettingsDrawer } from './Drawers';
 import { CountryDialog, DiscardDialog, RemoveDialog, SavedDialog, SubmitBlockedDialog, type Issue } from './Dialogs';
 import { KioskSection, SsoSection, type KioskMode } from './KioskSso';
+import { EmailSection, WebContentFilterSection, WebShortcutsSection } from './PolicySections';
 import { ProfileFields, SectionTitle } from '../components/ds';
 import { appStoreApps, enterpriseApps, libraryApps, storeSearchResults, type CatalogApp } from '../data';
 
@@ -127,7 +128,10 @@ export function ProfilePage({ initial = {} }: { initial?: ProfileState }) {
           error={showIssues ? issues.find((i) => i.section === 'Extensible SSO')?.message : undefined}
         />
       )}
-      {!['App Catalog', 'Kiosk', 'Extensible SSO'].includes(section) && (
+      {section === 'Email' && <EmailSection onChange={touch} />}
+      {section === 'Web Shortcuts' && <WebShortcutsSection onChange={touch} />}
+      {section === 'Web Content Filter' && <WebContentFilterSection onChange={touch} />}
+      {!['App Catalog', 'Kiosk', 'Extensible SSO', 'Email', 'Web Shortcuts', 'Web Content Filter'].includes(section) && (
         <div className="flex flex-col gap-5">
           <SectionTitle sub="This section keeps its current screens; it isn't part of the App Catalog design.">{section}</SectionTitle>
           <ProfileFields onChange={touch} />
