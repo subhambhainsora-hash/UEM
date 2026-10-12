@@ -1,6 +1,6 @@
 import * as React from 'react';
 import {
-  CheckCircle2, Filter, Globe, Hexagon, LayoutGrid, Lock, LockOpen, Mail, MapPin, Settings2,
+  AlertTriangle, CheckCircle2, Filter, Globe, Hexagon, LayoutGrid, Lock, LockOpen, Mail, MapPin, Settings2,
   ShieldCheck, SkipBack, SkipForward, Smartphone, Wifi, X,
 } from 'lucide-react';
 import { cn } from './ui/utils';
@@ -21,14 +21,26 @@ export function ProfileLayout({
   section,
   onSection,
   children,
+  dirty = 0,
+  issueSections = [],
+  onPrevious,
+  onCancel,
+  onSubmit,
 }: {
   section: Section;
   onSection: (s: Section) => void;
   children: React.ReactNode;
+  /** Number of unsaved changes; shown next to Submit. */
+  dirty?: number;
+  /** Sections with a blocking issue after a failed submit. */
+  issueSections?: string[];
+  onPrevious?: () => void;
+  onCancel?: () => void;
+  onSubmit?: () => void;
 }) {
   return (
     <AppShell page="profiles">
-      <div className="flex min-h-0 grow flex-col pt-[26px] pr-10 pb-2 pl-9">
+      <div className="flex min-h-0 grow flex-col overflow-y-auto pt-[26px] pr-10 pb-2 pl-9">
         <h1 className="m-0 text-[25px] leading-[1.2] font-medium text-heading">Apple iOS Profile</h1>
         <p className="mt-1.5 mb-0 text-[15px] text-muted">Configure policies, passcode rules, and restrictions for your Apple devices</p>
 
@@ -44,10 +56,11 @@ export function ProfileLayout({
           </li>
         </ol>
 
-        <div className="mt-4 flex min-h-0 grow">
-          <div className="flex w-[238px] shrink-0 flex-col overflow-y-auto border-e border-line pt-1 pr-[18px]">
+        <div className="mt-4 flex grow">
+          <div className="flex w-[238px] shrink-0 flex-col self-start border-e border-line pt-1 pr-[18px]">
             {sections.map(([name, Icon]) => {
               const active = name === section;
+              const flagged = issueSections.includes(name);
               return (
                 <button
                   key={name}
@@ -59,27 +72,33 @@ export function ProfileLayout({
                   )}
                 >
                   <Icon className="size-[18px]" strokeWidth={1.7} />
-                  {name}
+                  <span className="grow">{name}</span>
+                  {flagged && <AlertTriangle aria-label="Needs attention" className="size-4 text-bad" strokeWidth={1.7} />}
                 </button>
               );
             })}
           </div>
-          <section aria-label={section} className="flex min-w-0 grow flex-col overflow-y-auto pr-4 pl-5">
+          <section aria-label={section} className="flex min-w-0 grow flex-col pr-4 pl-5">
             {children}
           </section>
         </div>
       </div>
       <footer className="mx-10 ml-[30px] flex shrink-0 items-center justify-between border-t border-line py-4">
-        <UButton tone="outline" size="lg" className="text-[16px]">
+        <UButton tone="outline" size="lg" className="text-[16px]" onClick={onPrevious}>
           <SkipBack className="size-3.5 fill-current" strokeWidth={1.7} />
           Previous
         </UButton>
-        <div className="flex gap-5">
-          <UButton tone="outline" size="lg" className="text-[16px]">
+        <div className="flex items-center gap-5">
+          {dirty > 0 && (
+            <span className="text-[13px] text-muted" aria-live="polite">
+              {dirty} unsaved {dirty === 1 ? 'change' : 'changes'}
+            </span>
+          )}
+          <UButton tone="outline" size="lg" className="text-[16px]" onClick={onCancel}>
             <X strokeWidth={1.7} />
             Cancel
           </UButton>
-          <UButton size="lg" className="text-[16px]">
+          <UButton size="lg" className="text-[16px]" onClick={onSubmit}>
             Submit
             <SkipForward className="size-3.5 fill-current" strokeWidth={1.7} />
           </UButton>

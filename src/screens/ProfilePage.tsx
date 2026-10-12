@@ -1,10 +1,11 @@
 import * as React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ProfileLayout, type Section } from '../components/ProfileLayout';
 import { AppCatalogSection, type SourceTab } from './AppCatalog';
 import { AddInhouseDrawer, AddStoreDrawer, AppSettingsDrawer } from './Drawers';
-import { CountryDialog, RemoveDialog } from './Dialogs';
+import { CountryDialog, DiscardDialog, RemoveDialog, SavedDialog, SubmitBlockedDialog, type Issue } from './Dialogs';
 import { KioskSection, SsoSection, type KioskMode } from './KioskSso';
-import { appStoreApps, enterpriseApps, storeSearchResults, type CatalogApp } from '../data';
+import { appStoreApps, enterpriseApps, libraryApps, storeSearchResults, type CatalogApp } from '../data';
 
 export interface ProfileState {
   section?: Section;
@@ -16,6 +17,7 @@ export interface ProfileState {
 }
 
 export function ProfilePage({ initial = {} }: { initial?: ProfileState }) {
+  const navigate = useNavigate();
   const [section, setSection] = React.useState<Section>(initial.section ?? 'App Catalog');
   const [tab, setTab] = React.useState<SourceTab>(initial.tab ?? 'store');
   const [store, setStore] = React.useState(appStoreApps);
@@ -35,7 +37,36 @@ export function ProfilePage({ initial = {} }: { initial?: ProfileState }) {
   const [ssoAllowed, setSsoAllowed] = React.useState(
     initial.dialog === 'remove' ? ['slack', 'outlook', 'crm', 'survey'] : ['slack', 'outlook', 'crm'],
   );
+  const [ssoAll, setSsoAll] = React.useState(false);
   const catalog = [...store, ...ent];
+
+  /* Unsaved-change tracking. Every mutation that would reach devices bumps the count. */
+  const [dirty, setDirty] = React.useState(0);
+  const touch = () => setDirty((d) => d + 1);
+  const [discardOpen, setDiscardOpen] = React.useState(false);
+  React.useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
+
+  /* Validation. Runs on Submit; flagged sections stay marked until fixed. */
+  const issues: Issue[] = [];
+  if (kiosk === 'single' && !catalog.some((a) => a.id === kioskApp)) issues.push({ section: 'Kiosk', message: 'Single App mode needs an app from this profile’s App Catalog' });
+  if (!ssoAll && ssoAllowed.length === 0) issues.push({ section: 'Extensible SSO', message: 'Pick at least one app that may use SSO, or allow every app' });
+  const expired = ent.filter((a) => a.signingExpires && new Date(a.signingExpires) < new Date('2026-10-12'));
+  for (const a of expired) issues.push({ section: 'App Catalog', message: `${a.name} has an expired signing profile and can’t install. Upload a re-signed build or remove it` });
+  const [showIssues, setShowIssues] = React.useState(false);
+  const [blockedOpen, setBlockedOpen] = React.useState(false);
+  const [savedOpen, setSavedOpen] = React.useState(false);
+  const [savedCount, setSavedCount] = React.useState(0);
+
+  const submit = () => {
+    if (issues.length) { setShowIssues(true); setBlockedOpen(true); return; }
+    setSavedCount(dirty); setDirty(0); setShowIssues(false); setSavedOpen(true);
+  };
+  const cancel = () => (dirty ? setDiscardOpen(true) : navigate('/'));
 
   const removeApp = (a: CatalogApp) => {
     setStore((s) => s.filter((x) => x.id !== a.id));
@@ -43,10 +74,19 @@ export function ProfilePage({ initial = {} }: { initial?: ProfileState }) {
     setSsoAllowed((s) => s.filter((x) => x !== a.id));
     if (kioskApp === a.id) setKioskApp('');
     setRemoving(null);
+    touch();
   };
 
   return (
-    <ProfileLayout section={section} onSection={setSection}>
+    <ProfileLayout
+      section={section}
+      onSection={setSection}
+      dirty={dirty}
+      issueSections={showIssues ? issues.map((i) => i.section) : []}
+      onPrevious={() => navigate(-1)}
+      onCancel={cancel}
+      onSubmit={submit}
+    >
       {section === 'App Catalog' && (
         <AppCatalogSection
           tab={tab}
@@ -59,20 +99,33 @@ export function ProfilePage({ initial = {} }: { initial?: ProfileState }) {
           onAddInhouse={() => setInhouse('library')}
           onConfigure={setSettingsApp}
           onRemove={setRemoving}
+          showIssues={showIssues}
         />
       )}
       {section === 'Kiosk' && (
         <KioskSection
           mode={kiosk}
-          onMode={setKiosk}
+          onMode={(m) => { setKiosk(m); touch(); }}
           catalog={catalog}
           singleApp={kioskApp}
-          onSingleApp={setKioskApp}
+          onSingleApp={(id) => { setKioskApp(id); touch(); }}
           pickerOpen={initial.kioskPicker}
           onAddApps={() => { setSection('App Catalog'); setStoreOpen(true); }}
+          onChange={touch}
+          error={showIssues ? issues.find((i) => i.section === 'Kiosk')?.message : undefined}
         />
       )}
-      {section === 'Extensible SSO' && <SsoSection catalog={catalog} allowed={ssoAllowed} onAllowed={setSsoAllowed} />}
+      {section === 'Extensible SSO' && (
+        <SsoSection
+          catalog={catalog}
+          allowed={ssoAllowed}
+          onAllowed={(ids) => { setSsoAllowed(ids); touch(); }}
+          all={ssoAll}
+          onAll={(v) => { setSsoAll(v); touch(); }}
+          onChange={touch}
+          error={showIssues ? issues.find((i) => i.section === 'Extensible SSO')?.message : undefined}
+        />
+      )}
       {!['App Catalog', 'Kiosk', 'Extensible SSO'].includes(section) && (
         <div className="pt-4">
           <h2 className="m-0 text-[20px] font-semibold text-heading">{section}</h2>
@@ -89,7 +142,7 @@ export function ProfilePage({ initial = {} }: { initial?: ProfileState }) {
           const added = storeSearchResults
             .filter((r) => ids.includes(r.id) && !store.some((s) => s.id === r.id))
             .map((r) => ({ id: r.id, name: r.name, bundleId: `com.microsoft.${r.id}`, initials: r.initials, color: r.color, source: 'App Store' as const, chips: [] }));
-          setStore((s) => [...s, ...added]);
+          if (added.length) { setStore((s) => [...s, ...added]); touch(); }
           setStoreOpen(false);
         }}
       />
@@ -99,27 +152,32 @@ export function ProfilePage({ initial = {} }: { initial?: ProfileState }) {
         initialMode={inhouse ?? 'library'}
         inProfile={ent.map((a) => a.id)}
         onAdd={(ids) => {
-          if (ids.includes('expense') && !ent.some((a) => a.id === 'expense'))
-            setEnt((s) => [...s, { id: 'expense', name: 'Acme Expense', bundleId: 'com.acme.expense', initials: 'AE', color: '#1565c0', source: 'Enterprise', chips: [], meta: 'build 2.0.3 · hosted .ipa' }]);
+          const added = libraryApps
+            .filter((l) => ids.includes(l.id) && !ent.some((a) => a.id === l.id))
+            .map((l) => ({ id: l.id, name: l.name, bundleId: l.bundleId, initials: l.initials, color: l.color, source: 'Enterprise' as const, chips: [], meta: `build ${l.build} · ${l.delivery === 'Hosted .ipa' ? 'hosted .ipa' : 'manifest URL'}`, signingExpires: l.signingExpires }));
+          if (added.length) { setEnt((s) => [...s, ...added]); touch(); }
           setInhouse(null);
         }}
       />
-      <AppSettingsDrawer app={settingsApp} onOpenChange={(o) => !o && setSettingsApp(null)} />
+      <AppSettingsDrawer app={settingsApp} onOpenChange={(o) => !o && setSettingsApp(null)} onSave={touch} />
       <CountryDialog
         open={!!pendingCountry}
         to={pendingCountry ?? ''}
         from={country}
         onKeep={() => setPendingCountry(null)}
-        onSwitch={() => { setCountry(pendingCountry!); setPendingCountry(null); }}
+        onSwitch={() => { setCountry(pendingCountry!); setPendingCountry(null); touch(); }}
       />
       <RemoveDialog
         open={!!removing}
         name={removing?.name ?? ''}
         usedByKiosk={!!removing && kiosk === 'single' && kioskApp === removing.id}
-        usedBySso={!!removing && ssoAllowed.includes(removing.id)}
+        usedBySso={!!removing && !ssoAll && ssoAllowed.includes(removing.id)}
         onKeep={() => setRemoving(null)}
         onRemove={() => removing && removeApp(removing)}
       />
+      <DiscardDialog open={discardOpen} count={dirty} onKeep={() => setDiscardOpen(false)} onDiscard={() => { setDirty(0); setDiscardOpen(false); navigate('/'); }} />
+      <SubmitBlockedDialog open={blockedOpen} issues={issues} onClose={() => setBlockedOpen(false)} onGo={(s) => { setSection(s as Section); setBlockedOpen(false); }} />
+      <SavedDialog open={savedOpen} count={savedCount} onClose={() => setSavedOpen(false)} />
     </ProfileLayout>
   );
 }

@@ -199,3 +199,32 @@ export function Drawer({
     </Sheet>
   );
 }
+
+/* Signing state: icon + text, never colour alone ------------------------- */
+import { AlertTriangle, Clock, ShieldCheck } from 'lucide-react';
+import { signingState } from '../data';
+
+export function SigningBadge({ expires, short }: { expires?: string; short?: boolean }) {
+  const s = signingState(expires);
+  if (s.kind === 'none') return <span className="text-[13px] text-muted">{s.label}</span>;
+  if (s.kind === 'ok')
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[13px] text-ink">
+        <ShieldCheck className="size-4 text-ok" strokeWidth={1.7} />
+        {s.label}
+      </span>
+    );
+  if (s.kind === 'expiring')
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-[10px] bg-[#fff3e0] px-2 py-0.5 text-[12px] font-medium text-[#7b341e]">
+        <Clock className="size-3.5" strokeWidth={1.7} />
+        {short ? `Expires in ${s.days} days` : `${s.label} · expires in ${s.days} days`}
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-[10px] bg-[#fdecea] px-2 py-0.5 text-[12px] font-medium text-bad">
+      <AlertTriangle className="size-3.5" strokeWidth={1.7} />
+      {short ? 'Signing expired' : `Expired ${s.label} · ${s.days} days ago`}
+    </span>
+  );
+}

@@ -46,7 +46,7 @@ function SubItem({ to, label, active }: { to: string; label: string; active: boo
 
 export function AppShell({ page, children }: { page: Page; children: React.ReactNode }) {
   return (
-    <div className="flex h-screen min-h-[640px] flex-col overflow-hidden bg-white">
+    <div className="flex h-full min-h-[560px] min-w-[1180px] flex-col overflow-hidden bg-white">
       <header className="flex h-[61px] shrink-0 items-center gap-6 border-b border-soft bg-white pr-9 pl-4">
         <div className="flex w-[206px] shrink-0 flex-col leading-none">
           <span className="text-[25px] font-semibold tracking-[-0.01em] text-[#3d3d3d]">
@@ -111,7 +111,7 @@ export function AppShell({ page, children }: { page: Page; children: React.React
             </button>
           </div>
         </nav>
-        <main className="flex min-w-0 grow flex-col">{children}</main>
+        <main className="flex min-h-0 min-w-0 grow flex-col">{children}</main>
       </div>
     </div>
   );

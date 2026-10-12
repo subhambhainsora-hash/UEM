@@ -1,13 +1,16 @@
 import { CalendarCheck, Plus, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
-import { AppIcon, Chip, CountBadge, LaterBadge, UButton } from '../components/uem';
-import type { CatalogApp } from '../data';
+import { AppIcon, Chip, CountBadge, LaterBadge, SigningBadge, UButton } from '../components/uem';
+import { cn } from '../components/ui/utils';
+import { signingState, type CatalogApp } from '../data';
 
 export type SourceTab = 'store' | 'enterprise' | 'vpp';
 
-function AppRow({ app, onConfigure, onRemove }: { app: CatalogApp; onConfigure: () => void; onRemove: () => void }) {
+function AppRow({ app, onConfigure, onRemove, flag }: { app: CatalogApp; onConfigure: () => void; onRemove: () => void; flag?: boolean }) {
+  const signing = app.source === 'Enterprise' ? signingState(app.signingExpires) : null;
+  const blocked = signing?.kind === 'expired';
   return (
-    <div className="flex min-h-[72px] items-center gap-3.5 border-b border-row py-2.5">
+    <div className={cn('flex min-h-[72px] items-center gap-3.5 border-b border-row py-2.5', flag && blocked && '-mx-3 rounded-[4px] border border-[#f5c6c2] bg-[#fdecea]/60 px-3')}>
       <AppIcon initials={app.initials} color={app.color} />
       <span className="flex min-w-[150px] grow flex-col gap-0.5">
         <span className="text-[16px] font-medium text-heading">{app.name}</span>
@@ -16,7 +19,8 @@ function AppRow({ app, onConfigure, onRemove }: { app: CatalogApp; onConfigure: 
           {app.meta ? ` · ${app.meta}` : ''}
         </span>
       </span>
-      <span className="flex max-w-[280px] flex-wrap justify-end gap-1.5">
+      <span className="flex max-w-[300px] flex-wrap justify-end gap-1.5">
+        {signing && signing.kind !== 'ok' && signing.kind !== 'none' && <SigningBadge expires={app.signingExpires} short />}
         {app.chips.map((c) => (
           <Chip key={c}>{c}</Chip>
         ))}
@@ -52,6 +56,7 @@ export function AppCatalogSection({
   onAddInhouse,
   onConfigure,
   onRemove,
+  showIssues,
 }: {
   tab: SourceTab;
   onTab: (t: SourceTab) => void;
@@ -63,6 +68,8 @@ export function AppCatalogSection({
   onAddInhouse: () => void;
   onConfigure: (a: CatalogApp) => void;
   onRemove: (a: CatalogApp) => void;
+  /** After a blocked submit, highlight apps that can't install. */
+  showIssues?: boolean;
 }) {
   return (
     <Tabs value={tab} onValueChange={(v) => onTab(v as SourceTab)} className="gap-0">
@@ -128,7 +135,7 @@ export function AppCatalogSection({
         <p className="mt-2 mb-0 text-[14px] text-muted">Your organisation's own apps. Devices always get the newest available build.</p>
         <div className="mt-3.5 flex flex-col">
           {enterpriseApps.map((a) => (
-            <AppRow key={a.id} app={a} onConfigure={() => onConfigure(a)} onRemove={() => onRemove(a)} />
+            <AppRow key={a.id} app={a} onConfigure={() => onConfigure(a)} onRemove={() => onRemove(a)} flag={showIssues} />
           ))}
         </div>
       </TabsContent>

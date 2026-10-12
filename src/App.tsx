@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { Link, Route, Routes, useLocation } from 'react-router-dom';
 import { ProfilePage, type ProfileState } from './screens/ProfilePage';
 import { AppLibraryPage } from './screens/AppLibrary';
@@ -43,29 +44,41 @@ function Index() {
 
 function ScreenNav() {
   const { pathname } = useLocation();
+  const [hidden, setHidden] = React.useState(false);
   const i = screens.findIndex((s) => `/${s.id}` === pathname);
   if (i < 0) return null;
+  if (hidden)
+    return (
+      <button type="button" onClick={() => setHidden(false)} className="fixed top-0 right-0 z-40 rounded-bl-[6px] border-0 bg-[#1c1b1f]/85 px-2 py-0.5 font-sans text-[11px] text-white">
+        Screens
+      </button>
+    );
   return (
-    <div className="fixed bottom-3 left-1/2 z-40 flex -translate-x-1/2 items-center gap-3 rounded-full bg-[#1c1b1f]/90 px-4 py-1.5 font-sans text-[13px] text-white shadow-lg">
-      <Link to="/" className="text-white no-underline">All screens</Link>
-      <span className="opacity-50">|</span>
-      {i > 0 && <Link to={`/${screens[i - 1].id}`} className="text-white no-underline">‹ Prev</Link>}
-      <span>{screens[i].label.split(' · ')[0]}</span>
-      {i < screens.length - 1 && <Link to={`/${screens[i + 1].id}`} className="text-white no-underline">Next ›</Link>}
+    <div className="flex h-7 shrink-0 items-center gap-3 bg-[#1c1b1f] px-3 font-sans text-[12px] text-white">
+      <span className="rounded-[3px] bg-white/15 px-1.5 text-[10px] font-semibold tracking-wide uppercase">Prototype</span>
+      <Link to="/" className="text-white/80 no-underline hover:text-white">All screens</Link>
+      <span className="text-white/30">|</span>
+      {i > 0 && <Link to={`/${screens[i - 1].id}`} className="text-white/80 no-underline hover:text-white">‹ {screens[i - 1].id.toUpperCase()}</Link>}
+      <span className="font-medium">{screens[i].label}</span>
+      {i < screens.length - 1 && <Link to={`/${screens[i + 1].id}`} className="text-white/80 no-underline hover:text-white">{screens[i + 1].id.toUpperCase()} ›</Link>}
+      <span className="grow" />
+      <button type="button" onClick={() => setHidden(true)} className="border-0 bg-transparent p-0 text-white/70 hover:text-white">Hide</button>
     </div>
   );
 }
 
 export default function App() {
   return (
-    <>
-      <Routes>
+    <div className="flex h-screen flex-col">
+      <ScreenNav />
+      <div className="min-h-0 grow">
+        <Routes>
         <Route path="/" element={<Index />} />
         {screens.map((s) => (
           <Route key={s.id} path={`/${s.id}`} element={s.library ? <AppLibraryPage /> : <ProfilePage key={s.id} initial={s.state} />} />
         ))}
-      </Routes>
-      <ScreenNav />
-    </>
+        </Routes>
+      </div>
+    </div>
   );
 }

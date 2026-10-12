@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { ChevronDown, ChevronUp, Info, Plus, X } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronUp, Info, Plus, X } from 'lucide-react';
+import { AllowAllSsoDialog } from './Dialogs';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { ToggleGroup, ToggleGroupItem } from '../components/ui/toggle-group';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
@@ -32,6 +33,8 @@ export function KioskSection({
   onSingleApp,
   pickerOpen,
   onAddApps,
+  onChange,
+  error,
 }: {
   mode: KioskMode;
   onMode: (m: KioskMode) => void;
@@ -40,6 +43,10 @@ export function KioskSection({
   onSingleApp: (id: string) => void;
   pickerOpen?: boolean;
   onAddApps: () => void;
+  /** Called for any edit that should count as an unsaved change. */
+  onChange?: () => void;
+  /** Validation message shown after a blocked submit. */
+  error?: string;
 }) {
   const [open, setOpen] = React.useState(!!pickerOpen);
   const [home, setHome] = React.useState<Record<string, { show: boolean; dock: boolean }>>({
@@ -68,6 +75,12 @@ export function KioskSection({
         </ToggleGroup>
       </div>
 
+      {error && (
+        <div role="alert" className="mt-3 flex items-center gap-2.5 rounded-[4px] border border-[#f5c6c2] bg-[#fdecea] px-3.5 py-2.5 text-[14px] text-bad">
+          <AlertTriangle className="size-4 shrink-0" strokeWidth={1.7} />
+          {error}
+        </div>
+      )}
       {mode === 'single' && (
         <>
           <div className="flex items-start gap-6 border-b border-row py-3.5">
@@ -78,7 +91,7 @@ export function KioskSection({
             </div>
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
-                <button type="button" className={cn('flex h-[42px] w-[380px] items-center gap-3 rounded-[4px] border bg-white px-3 text-[15px]', open ? 'border-2 border-uem' : 'border-[#c4c4c4]')}>
+                <button type="button" aria-invalid={!current || undefined} className={cn('flex h-[42px] w-[380px] items-center gap-3 rounded-[4px] border bg-white px-3 text-[15px]', open ? 'border-2 border-uem' : error && !current ? 'border-2 border-bad' : 'border-[#c4c4c4]')}>
                   {current ? (
                     <>
                       <AppIcon initials={current.initials} color={current.color} size={26} />
@@ -118,7 +131,7 @@ export function KioskSection({
             <span className="grow text-[16px] text-heading">Web Shortcuts</span>
             <div className="flex h-[42px] w-[380px] items-center gap-1.5 rounded-[4px] border border-[#c4c4c4] px-2">
               {shortcuts.map((s) => (
-                <Pill key={s} onRemove={() => setShortcuts((x) => x.filter((y) => y !== s))}>{s}</Pill>
+                <Pill key={s} onRemove={() => { setShortcuts((x) => x.filter((y) => y !== s)); onChange?.(); }}>{s}</Pill>
               ))}
             </div>
           </div>
@@ -148,10 +161,10 @@ export function KioskSection({
                       </TableCell>
                       <TableCell className="px-3.5"><SourceBadge source={a.source} /></TableCell>
                       <TableCell className="px-3.5">
-                        <UCheckbox checked={h.show} onCheckedChange={(v) => setHome((s) => ({ ...s, [a.id]: { show: !!v, dock: v ? h.dock : false } }))} aria-label={`Show ${a.name}`} />
+                        <UCheckbox checked={h.show} onCheckedChange={(v) => { setHome((s) => ({ ...s, [a.id]: { show: !!v, dock: v ? h.dock : false } })); onChange?.(); }} aria-label={`Show ${a.name}`} />
                       </TableCell>
                       <TableCell className="px-3.5">
-                        <USwitch checked={h.dock} disabled={!h.show || (!h.dock && docked >= 4)} onCheckedChange={(v) => setHome((s) => ({ ...s, [a.id]: { ...h, dock: v } }))} aria-label={`Dock ${a.name}`} />
+                        <USwitch checked={h.dock} disabled={!h.show || (!h.dock && docked >= 4)} onCheckedChange={(v) => { setHome((s) => ({ ...s, [a.id]: { ...h, dock: v } })); onChange?.(); }} aria-label={`Dock ${a.name}`} />
                       </TableCell>
                     </TableRow>
                   );
@@ -159,7 +172,10 @@ export function KioskSection({
               </TableBody>
             </Table>
           </div>
-          <p className="mt-2 text-[13px] text-muted">Apps not shown are hidden and blocked. To offer another app, add it in App Catalog first.</p>
+          <p className="mt-2 text-[13px] text-muted">
+            Apps not shown are hidden and blocked. To offer another app, add it in App Catalog first.
+            {docked >= 4 && <span className="block text-[#7b341e]">The dock is full. Unpin an app to pin another.</span>}
+          </p>
         </>
       )}
 
@@ -169,8 +185,16 @@ export function KioskSection({
 }
 
 /* K3 · Extensible SSO ---------------------------------------------------- */
-export function SsoSection({ catalog, allowed, onAllowed }: { catalog: CatalogApp[]; allowed: string[]; onAllowed: (ids: string[]) => void }) {
-  const [all, setAll] = React.useState(false);
+export function SsoSection({ catalog, allowed, onAllowed, all, onAll, onChange, error }: {
+  catalog: CatalogApp[];
+  allowed: string[];
+  onAllowed: (ids: string[]) => void;
+  all: boolean;
+  onAll: (v: boolean) => void;
+  onChange?: () => void;
+  error?: string;
+}) {
+  const [confirmAll, setConfirmAll] = React.useState(false);
   const [bundles, setBundles] = React.useState(['com.apple.mobilesafari']);
   const [draft, setDraft] = React.useState('');
   const [open, setOpen] = React.useState(false);
@@ -179,6 +203,12 @@ export function SsoSection({ catalog, allowed, onAllowed }: { catalog: CatalogAp
     <div className="pt-1">
       <h2 className="mt-2 mb-0 text-[20px] font-semibold text-heading">SSO Configuration</h2>
       <p className="mt-1 mb-0 text-[14px] text-muted">Configure single sign-on settings for your device management</p>
+      {error && (
+        <div role="alert" className="mt-3 flex items-center gap-2.5 rounded-[4px] border border-[#f5c6c2] bg-[#fdecea] px-3.5 py-2.5 text-[14px] text-bad">
+          <AlertTriangle className="size-4 shrink-0" strokeWidth={1.7} />
+          {error}
+        </div>
+      )}
       <div className={row}>
         <span className="grow text-[16px] text-heading">SSO type <Info className="ml-2 inline size-4 text-muted" strokeWidth={1.7} /></span>
         <UButton tone="outline" className="bg-uem-soft">Redirect</UButton>
@@ -201,7 +231,7 @@ export function SsoSection({ catalog, allowed, onAllowed }: { catalog: CatalogAp
         <div className="w-[420px]">
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-              <div role="button" tabIndex={0} className={cn('flex min-h-[42px] w-full flex-wrap items-center gap-1.5 rounded-[4px] border border-[#c4c4c4] p-1.5 pr-8 relative', all && 'opacity-50')}>
+              <div role="button" tabIndex={0} className={cn('flex min-h-[42px] w-full flex-wrap items-center gap-1.5 rounded-[4px] border p-1.5 pr-8 relative', error && !all && allowed.length === 0 ? 'border-2 border-bad' : 'border-[#c4c4c4]', all && 'opacity-50')}>
                 {(all ? catalog.map((a) => a.id) : allowed).map((id) => {
                   const a = catalog.find((x) => x.id === id);
                   if (!a) return null;
@@ -227,8 +257,18 @@ export function SsoSection({ catalog, allowed, onAllowed }: { catalog: CatalogAp
             </PopoverContent>
           </Popover>
           <label className="mt-3 flex items-center gap-2.5 text-[14px]">
-            <UCheckbox checked={all} onCheckedChange={(v) => setAll(!!v)} /> Allow every app in this profile's App Catalog
+            <UCheckbox checked={all} onCheckedChange={(v) => (v ? setConfirmAll(true) : onAll(false))} /> Allow every app in this profile's App Catalog
           </label>
+          {all && (
+            <div className="mt-2.5 flex gap-2.5 rounded-[4px] bg-[#fff3e0] px-3.5 py-2.5 text-[13px] text-[#7b341e]">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0" strokeWidth={1.7} />
+              <span>
+                Every app in the catalog can use SSO, including apps added later. The allow list above is ignored while this is on.
+                <button type="button" onClick={() => onAll(false)} className="ml-1.5 border-0 bg-transparent p-0 font-medium text-[#7b341e] underline">Turn off</button>
+              </span>
+            </div>
+          )}
+          <AllowAllSsoDialog open={confirmAll} appCount={catalog.length} onCancel={() => setConfirmAll(false)} onConfirm={() => { onAll(true); setConfirmAll(false); }} />
         </div>
       </div>
       <div className="flex items-start gap-6 py-3.5">
@@ -238,12 +278,12 @@ export function SsoSection({ catalog, allowed, onAllowed }: { catalog: CatalogAp
         </div>
         <div className="flex min-h-[44px] w-[420px] flex-wrap items-center gap-1.5 rounded-[4px] border border-[#c4c4c4] p-1.5">
           {bundles.map((b) => (
-            <Pill key={b} onRemove={() => setBundles((x) => x.filter((y) => y !== b))}>{b}</Pill>
+            <Pill key={b} onRemove={() => { setBundles((x) => x.filter((y) => y !== b)); onChange?.(); }}>{b}</Pill>
           ))}
           <input
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && draft.trim()) { setBundles((x) => [...x, draft.trim()]); setDraft(''); } }}
+            onKeyDown={(e) => { if (e.key === 'Enter' && draft.trim()) { setBundles((x) => [...x, draft.trim()]); setDraft(''); onChange?.(); } }}
             placeholder="Add bundle ID"
             className="min-w-[120px] grow border-0 bg-transparent px-1 text-[14px] outline-none"
           />
