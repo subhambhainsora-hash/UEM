@@ -8,7 +8,7 @@ import moLogo from '../assets/ds/mo-logo.svg';
 import icOrg from '../assets/ds/org-building.svg';
 import icChevron from '../assets/ds/chevron-down.svg';
 
-type Page = 'profiles' | 'library';
+type Page = 'profiles' | 'library' | 'vpp';
 
 /* Sidebar · Endpoint Defence navigation (from the iOS Profile App Catalog PDF) ---- */
 function Group({ label, open, onToggle }: { label: string; open: boolean; onToggle: () => void }) {
@@ -116,6 +116,7 @@ function Sidebar({ page }: { page: Page }) {
                   <>
                     <SubItem to="/d1" label="Profiles" active={page === 'profiles'} />
                     <SubItem to="/l1" label="App Groups" active={page === 'library'} />
+                    <SubItem to="/v2" label="VPP Token" active={page === 'vpp'} />
                   </>
                 )}
               </>

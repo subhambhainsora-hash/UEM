@@ -7,7 +7,7 @@ import edgeLogo from './assets/logos/edge.png';
 import onedriveLogo from './assets/logos/onedrive.png';
 import wordLogo from './assets/logos/word.png';
 
-export type Source = 'App Store' | 'Enterprise';
+export type Source = 'App Store' | 'Enterprise' | 'VPP';
 
 /** The profile being edited. Device count drives every impact message. */
 export const profile = { name: 'Sales Baseline', deviceCount: 148 };
@@ -44,6 +44,8 @@ export interface CatalogApp {
   logo?: string;
   /** Enterprise apps only: ISO date the signing profile expires. */
   signingExpires?: string;
+  /** VPP apps only: the licensed app this catalog entry installs. */
+  vppId?: string;
 }
 
 export const appStoreApps: CatalogApp[] = [

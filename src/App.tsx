@@ -4,6 +4,8 @@ import { CheckCircle2, Copy as CopyIcon, Download, LayoutGrid, MoreVertical, Pen
 import { ToastProvider, useToast } from './components/toast';
 import { ProfilePage, type ProfileState } from './screens/ProfilePage';
 import { AppLibraryPage } from './screens/AppLibrary';
+import { VppTokenPage } from './screens/VppToken';
+import type { TokenState } from './vpp';
 import { AppShell } from './components/AppShell';
 import { PageTitle, UndoRow } from './components/ds';
 import { IconButton, UButton, UMenu, UMenuItem, UMenuSeparator } from './components/uem';
@@ -11,7 +13,7 @@ import { Input } from './components/ui/input';
 import { cn } from './components/ui/utils';
 import { profile, plural } from './data';
 
-const screens: { id: string; label: string; state?: ProfileState; library?: boolean }[] = [
+const screens: { id: string; label: string; state?: ProfileState; library?: boolean; libraryTab?: 'inhouse' | 'vpp'; token?: TokenState }[] = [
   { id: 'd1', label: 'App Store tab', state: {} },
   { id: 'd2', label: 'Add App Store apps drawer', state: { drawer: 'store' } },
   { id: 'd3', label: 'Configure drawer', state: { drawer: 'settings' } },
@@ -31,6 +33,13 @@ const screens: { id: string; label: string; state?: ProfileState; library?: bool
   { id: 'p1', label: 'Email configuration', state: { section: 'Email' } },
   { id: 'p2', label: 'Web Shortcuts', state: { section: 'Web Shortcuts' } },
   { id: 'p3', label: 'Web Content Filter', state: { section: 'Web Content Filter' } },
+  { id: 'v1', label: 'VPP token · not connected', token: 'none' },
+  { id: 'v2', label: 'VPP token · connected', token: 'connected' },
+  { id: 'v3', label: 'VPP token · expiring / revoked / expired', token: 'expiring' },
+  { id: 'v4', label: 'App Catalog · VPP tab', state: { tab: 'vpp' } },
+  { id: 'v5', label: 'App Catalog · VPP tab, no token', state: { tab: 'vpp', vppToken: 'none' } },
+  { id: 'v6', label: 'Add VPP apps drawer', state: { tab: 'vpp', drawer: 'vpp' } },
+  { id: 'v7', label: 'App Groups · VPP licences', library: true, libraryTab: 'vpp' },
 ];
 
 /* Profiles list · the page the sidebar's "Profiles" item opens --------------- */
@@ -227,7 +236,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<ProfilesPage />} />
         {screens.map((s) => (
-          <Route key={s.id} path={`/${s.id}`} element={s.library ? <AppLibraryPage /> : <ProfilePage key={s.id} initial={s.state} />} />
+          <Route key={s.id} path={`/${s.id}`} element={s.token ? <VppTokenPage key={s.id} initial={s.token} /> : s.library ? <AppLibraryPage key={s.id} initialTab={s.libraryTab} /> : <ProfilePage key={s.id} initial={s.state} />} />
         ))}
       </Routes>
       <ScreenNav />

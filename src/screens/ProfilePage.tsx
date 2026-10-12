@@ -9,12 +9,15 @@ import { EmailSection, WebContentFilterSection, WebShortcutsSection } from './Po
 import { ProfileFields, SectionTitle } from '../components/ds';
 import { appStoreApps, enterpriseApps, libraryApps, plural, profile, storeSearchResults, type CatalogApp } from '../data';
 import { useToast } from '../components/toast';
+import { AddVppAppsDrawer } from './VppDrawers';
+import { licenceLabel, vppApps as vppCatalog, type TokenState } from '../vpp';
 
 export interface ProfileState {
   section?: Section;
   tab?: SourceTab;
-  drawer?: 'store' | 'library' | 'upload' | 'settings' | 'settings-enterprise';
+  drawer?: 'store' | 'library' | 'upload' | 'settings' | 'settings-enterprise' | 'vpp';
   dialog?: 'country' | 'remove';
+  vppToken?: TokenState;
   kiosk?: KioskMode;
   kioskPicker?: boolean;
 }
@@ -40,6 +43,11 @@ export function ProfilePage({ initial = {} }: { initial?: ProfileState }) {
   /** Apps added since the last submit, for the "New · not submitted" chip. */
   const [addedIds, setAddedIds] = React.useState<string[]>([]);
   const [editedIds, setEditedIds] = React.useState<string[]>([]);
+  /* VPP apps in this profile, by licensed-app id. The token state comes from the Apple VPP Token page. */
+  const [vppIds, setVppIds] = React.useState<string[]>(['lightroom', 'word', 'slack-ipad', 'fieldforce']);
+  const [vppOpen, setVppOpen] = React.useState(initial.drawer === 'vpp');
+  const vppToken: TokenState = initial.vppToken ?? 'connected';
+  const vppInProfile = vppCatalog.filter((v) => vppIds.includes(v.id));
   const [kiosk, setKiosk] = React.useState<KioskMode>(initial.kiosk ?? 'single');
   const [kioskApp, setKioskApp] = React.useState('survey');
   const [ssoAllowed, setSsoAllowed] = React.useState(
@@ -59,7 +67,7 @@ export function ProfilePage({ initial = {} }: { initial?: ProfileState }) {
   /* Discard: back to what devices have today. */
   const discard = () => {
     setStore(appStoreApps); setEnt(enterpriseApps); setCountry('United States'); setKiosk(initial.kiosk ?? 'single'); setKioskApp('survey');
-    setSsoAllowed(['slack', 'outlook', 'crm']); setSsoAll(false); setShowIssues(false); clean(); setStatus('idle');
+    setSsoAllowed(['slack', 'outlook', 'crm']); setSsoAll(false); setVppIds(['lightroom', 'word', 'slack-ipad', 'fieldforce']); setShowIssues(false); clean(); setStatus('idle');
     toast({ title: 'Changes discarded', sub: `${profile.name} is back to what its ${plural(profile.deviceCount, 'device')} have today.`, tone: 'info' });
   };
   React.useEffect(() => {
@@ -88,6 +96,13 @@ export function ProfilePage({ initial = {} }: { initial?: ProfileState }) {
   const cancel = () => (dirty ? setDiscardOpen(true) : navigate('/'));
 
   const removeApp = (a: CatalogApp) => {
+    if (a.source === 'VPP') {
+      setUndo({ app: a, index: vppIds.indexOf(a.vppId!) });
+      setVppIds((x) => x.filter((id) => id !== a.vppId));
+      setConfirming(null);
+      if (addedIds.includes(a.id)) { setAddedIds((x) => x.filter((y) => y !== a.id)); setDirty((d) => Math.max(0, d - 1)); } else touch();
+      return;
+    }
     const index = (a.source === 'App Store' ? store : ent).findIndex((x) => x.id === a.id);
     setUndo({ app: a, index });
     setStore((s) => s.filter((x) => x.id !== a.id));
@@ -101,7 +116,8 @@ export function ProfilePage({ initial = {} }: { initial?: ProfileState }) {
     if (!undo) return;
     const { app, index } = undo;
     const put = (s: CatalogApp[]) => { const l = [...s]; l.splice(Math.min(index, l.length), 0, app); return l; };
-    if (app.source === 'App Store') setStore(put); else setEnt(put);
+    if (app.source === 'VPP') setVppIds((x) => { const l = [...x]; l.splice(Math.min(index, l.length), 0, app.vppId!); return l; });
+    else if (app.source === 'App Store') setStore(put); else setEnt(put);
     setUndo(null);
     setDirty((d) => Math.max(0, d - 1));
   };
@@ -139,6 +155,10 @@ export function ProfilePage({ initial = {} }: { initial?: ProfileState }) {
           onCancelRemove={() => setConfirming(null)}
           undo={undo}
           onUndo={undoRemove}
+          vppToken={vppToken}
+          vppApps={vppInProfile}
+          vppCount={vppInProfile.length}
+          onAddVpp={() => setVppOpen(true)}
           pendingCountry={pendingCountry}
           onKeepCountry={() => setPendingCountry(null)}
           onSwitchCountry={() => { setCountry(pendingCountry!); setPendingCountry(null); touch(); toast({ title: `App Store country switched to ${pendingCountry}`, sub: 'Contoso Payroll leaves the catalog after you submit. Recorded in the audit log.' }); }}
@@ -211,7 +231,19 @@ export function ProfilePage({ initial = {} }: { initial?: ProfileState }) {
           toast({ title: `${b.appName} ${b.version} saved to App Groups and added here`, sub: `${plural(profile.deviceCount, 'device')} install it after you submit.` });
         }}
       />
-      <AppSettingsDrawer app={settingsApp} onOpenChange={(o) => !o && setSettingsApp(null)} onSave={() => { touch(); if (settingsApp && !addedIds.includes(settingsApp.id)) setEditedIds((x) => (x.includes(settingsApp.id) ? x : [...x, settingsApp.id])); if (settingsApp) toast({ title: `Settings saved for ${settingsApp.name}`, sub: `${plural(profile.deviceCount, 'device')} get them after you submit.` }); }} />
+      <AddVppAppsDrawer
+        open={vppOpen}
+        onOpenChange={setVppOpen}
+        apps={vppCatalog}
+        platform="iOS"
+        inProfile={vppIds}
+        onAdd={(ids) => {
+          const fresh = ids.filter((id) => !vppIds.includes(id));
+          if (fresh.length) { setVppIds((x) => [...x, ...fresh]); setAddedIds((x) => [...x, ...fresh.map((id) => `vpp-${id}`)]); touch(); toast({ title: `${plural(fresh.length, 'VPP app')} added to the App Catalog`, sub: `Licences are assigned to ${plural(profile.deviceCount, 'device')} after you submit.` }); }
+          setVppOpen(false);
+        }}
+      />
+      <AppSettingsDrawer app={settingsApp} licence={settingsApp?.vppId ? licenceLabel(vppCatalog.find((v) => v.id === settingsApp.vppId)!) : undefined} onOpenChange={(o) => !o && setSettingsApp(null)} onSave={() => { touch(); if (settingsApp && !addedIds.includes(settingsApp.id)) setEditedIds((x) => (x.includes(settingsApp.id) ? x : [...x, settingsApp.id])); if (settingsApp) toast({ title: `Settings saved for ${settingsApp.name}`, sub: `${plural(profile.deviceCount, 'device')} get them after you submit.` }); }} />
       <DiscardDialog open={discardOpen} count={dirty} onKeep={() => setDiscardOpen(false)} onDiscard={() => { clean(); setDiscardOpen(false); navigate('/'); }} />
     </ProfileLayout>
   );

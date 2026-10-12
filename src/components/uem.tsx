@@ -84,7 +84,7 @@ export function SourceBadge({ source, size = 'sm' }: { source: Source; size?: 's
       className={cn(
         'rounded-[8px] border-0 font-medium whitespace-nowrap',
         size === 'sm' ? 'px-2 py-[1px] text-[11px]' : 'px-2.5 py-[3px] text-[13px]',
-        store ? 'bg-uem-soft text-[#1565c0]' : 'bg-[#fff3e0] text-[#7b341e]',
+        store ? 'bg-uem-soft text-[#1565c0]' : source === 'VPP' ? 'bg-[#efe9fb] text-later' : 'bg-[#fff3e0] text-[#7b341e]',
       )}
     >
       {source}

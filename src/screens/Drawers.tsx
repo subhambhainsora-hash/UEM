@@ -267,8 +267,6 @@ export function AddInhouseDrawer({
 }
 
 /* D3 / S1 / S2 · App settings -------------------------------------------- */
-const plistKeys = (v: string) => (v.match(/<key>/g) ?? []).length;
-
 const toggleDefs = [
   ['removable', 'Removable', 'Allows the user to uninstall the app · iOS 14 and later'],
   ['hideable', 'Hideable', 'Allows the user to hide the app'],
@@ -278,16 +276,23 @@ const toggleDefs = [
   ['tap', 'Tap to Pay screen lock', 'Locks the device after each Tap to Pay transaction'],
 ] as const;
 
-export function AppSettingsDrawer({ app, onOpenChange, onSave }: { app: CatalogApp | null; onOpenChange: (o: boolean) => void; onSave?: () => void }) {
+export function AppSettingsDrawer({ app, onOpenChange, onSave, licence }: { app: CatalogApp | null; onOpenChange: (o: boolean) => void; onSave?: () => void; /** VPP apps: what the licence pool has left. */ licence?: string }) {
   const enterprise = app?.source === 'Enterprise';
   const lib = app ? libraryApps.find((l) => l.id === app.id) : undefined;
   const [lastBuild, setLastBuild] = React.useState<string | null>(null);
   const [state, setState] = React.useState<Record<string, boolean>>({});
   const [domains, setDomains] = React.useState<string[]>([]);
   const [domainDraft, setDomainDraft] = React.useState('');
-  const [config, setConfig] = React.useState('');
-  React.useEffect(() => { setDomains(app?.chips.some((c) => c.includes('associated domain')) ? ['crm.acme.com'] : []); setDomainDraft(''); setConfig(''); }, [app?.id]);
-  const configError = config.trim() && !(/<dict>[\s\S]*<\/dict>/.test(config.trim())) ? 'Needs a <dict> … </dict> block, as in a plist' : config.trim() && (config.match(/<key>/g) ?? []).length !== (config.match(/<\/key>/g) ?? []).length ? 'A <key> is missing its closing </key>' : '';
+  const [config, setConfig] = React.useState<{ key: string; type: string; value: string }[]>([]);
+  const [configDesc, setConfigDesc] = React.useState('');
+  const [configFocus, setConfigFocus] = React.useState<number | null>(null);
+  React.useEffect(() => {
+    setDomains(app?.chips.some((c) => c.includes('associated domain')) ? ['crm.acme.com'] : []); setDomainDraft(''); setConfigFocus(null);
+    const managed = app?.chips.includes('Managed config');
+    setConfig(managed ? [{ key: 'serverUrl', type: 'URL', value: 'https://crm.acme.com' }, { key: 'userEmail', type: 'String', value: '$user.email' }] : []);
+    setConfigDesc(managed ? `${app?.name} sign-in` : '');
+  }, [app?.id]);
+  const configError = config.some((r) => !r.key.trim()) ? 'Every key needs a name' : new Set(config.map((r) => r.key.trim())).size !== config.length ? 'Keys must be unique' : '';
   React.useEffect(() => {
     setState(enterprise ? { backup: true, vpn: true } : { removable: true, backup: true });
   }, [app?.id, enterprise]);
@@ -355,6 +360,10 @@ export function AppSettingsDrawer({ app, onOpenChange, onSave }: { app: CatalogA
                   Builds belong to the channel {app.name}. Retiring one affects {lib ? `${plural(lib.usedBy.profiles, 'profile')} and ${plural(lib.usedBy.devices, 'device')}` : 'every profile that uses this channel'}.
                 </p>
               </div>
+            ) : app.source === 'VPP' ? (
+              <div className="mt-4">
+                <InfoAlert>Licensed through Apple Business Manager · {licence ?? 'licence counts unavailable'}. Installs silently; no Apple ID prompt.</InfoAlert>
+              </div>
             ) : (
               <div className="mt-4">
                 <InfoAlert>United States listing, version 24.10.10. The App Store always installs its latest version. Without VPP the user is asked for an Apple ID.</InfoAlert>
@@ -365,7 +374,7 @@ export function AppSettingsDrawer({ app, onOpenChange, onSave }: { app: CatalogA
             <TabsList className={cn(tabListClass, 'px-6')}>
               <TabsTrigger value="settings" className={tabTriggerClass}>Settings</TabsTrigger>
               <TabsTrigger value="domains" className={tabTriggerClass}>Domains {domains.length > 0 && <CountBadge n={domains.length} />}</TabsTrigger>
-              <TabsTrigger value="config" className={tabTriggerClass}>Config {config.trim() && <CountBadge n={plistKeys(config)} />}</TabsTrigger>
+              <TabsTrigger value="config" className={tabTriggerClass}>Config {config.length > 0 && <CountBadge n={config.length} />}</TabsTrigger>
             </TabsList>
             <TabsContent value="settings" className="px-6 pt-2">
               {toggleDefs.map(([k, t, h]) => (
@@ -388,12 +397,36 @@ export function AppSettingsDrawer({ app, onOpenChange, onSave }: { app: CatalogA
                 </ul>
               )}
             </TabsContent>
-            <TabsContent value="config" className="px-6 pt-4 text-[14px] text-muted">
-              <div className="flex flex-col gap-2">
-                <label htmlFor="managed-config" className="text-[14px] font-semibold text-heading">Managed app configuration</label>
-                <textarea id="managed-config" value={config} onChange={(e) => setConfig(e.target.value)} placeholder={'<dict>\n  <key>serverUrl</key>\n  <string>https://crm.acme.com</string>\n</dict>'} aria-invalid={!!configError}
-                  className={cn('h-40 w-full rounded-[6px] border p-2.5 font-mono text-[13px] text-ink placeholder:text-placeholder focus-visible:border-uem focus-visible:outline-none', configError ? 'border-bad' : 'border-line')} />
-                {configError ? <span className="text-[12px] text-bad">{configError}</span> : config.trim() ? <span className="text-[12px] text-ok">Valid plist · {plural(plistKeys(config), 'key')} sent to the app at install</span> : <span className="text-[12px] text-muted">Sent to the app as key-value pairs at install.</span>}
+            <TabsContent value="config" className="px-6 pt-4 text-[14px]">
+              <div className="flex flex-col gap-4">
+                <Field label="Description" info="Shown in the audit log next to this configuration" placeholder="e.g., Lightroom sign-in" value={configDesc} onChange={(e) => setConfigDesc(e.target.value)} />
+                <div className="flex flex-col gap-2">
+                  <span className="text-[14px] font-semibold text-heading">Managed app configuration</span>
+                  <div className="overflow-hidden rounded-[6px] border border-line">
+                    <div className="grid grid-cols-[1fr_120px_1fr_36px] gap-2 bg-[#fafafa] px-3 py-2 text-[12px] font-semibold text-heading"><span>Key</span><span>Type</span><span>Value</span><span /></div>
+                    {config.length === 0 && <p className="m-0 px-3 py-5 text-center text-[13px] text-muted">No keys yet. Add one, or leave empty to send no configuration.</p>}
+                    {config.map((row, i) => (
+                      <div key={i} className="grid grid-cols-[1fr_120px_1fr_36px] items-center gap-2 border-t border-row px-3 py-1.5">
+                        <input aria-label="Key" value={row.key} onChange={(e) => setConfig((c) => c.map((r, j) => (j === i ? { ...r, key: e.target.value } : r)))} placeholder="serverUrl" className={cn('h-9 rounded-[6px] border px-2 font-mono text-[13px] text-ink outline-none placeholder:text-placeholder focus:border-uem', row.key.trim() ? 'border-line' : 'border-bad')} />
+                        <select aria-label="Type" value={row.type} onChange={(e) => setConfig((c) => c.map((r, j) => (j === i ? { ...r, type: e.target.value } : r)))} className="h-9 rounded-[6px] border border-line bg-white px-2 text-[13px] text-ink">
+                          {['String', 'Integer', 'Boolean', 'URL'].map((t) => <option key={t}>{t}</option>)}
+                        </select>
+                        <input aria-label="Value" value={row.value} onChange={(e) => setConfig((c) => c.map((r, j) => (j === i ? { ...r, value: e.target.value } : r)))} onFocus={() => setConfigFocus(i)} placeholder="https://… or $user.email" className={cn('h-9 rounded-[6px] border border-line px-2 font-mono text-[13px] outline-none placeholder:text-placeholder focus:border-uem', row.value.startsWith('$') ? 'text-uem' : 'text-ink')} />
+                        <button type="button" aria-label={`Remove ${row.key || 'key'}`} onClick={() => setConfig((c) => c.filter((_, j) => j !== i))} className="flex size-9 items-center justify-center rounded-[6px] border-0 bg-transparent text-muted hover:bg-[#fdecea] hover:text-bad"><X className="size-4" strokeWidth={1.7} /></button>
+                      </div>
+                    ))}
+                  </div>
+                  <span><UButton tone="outline" size="sm" onClick={() => { setConfig((c) => [...c, { key: '', type: 'String', value: '' }]); setConfigFocus(config.length); }}>Add key</UButton></span>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <span className="text-[13px] font-semibold text-heading">Insert a variable</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {['$user.email', '$user.username', '$device.id', '$device.serial', '$organization.id'].map((v) => (
+                      <button key={v} type="button" disabled={configFocus === null || !config[configFocus]} onClick={() => configFocus !== null && setConfig((c) => c.map((r, j) => (j === configFocus ? { ...r, value: v } : r)))} className="rounded-full border border-line bg-white px-2.5 py-1 font-mono text-[12px] text-uem hover:bg-uem-soft disabled:text-[#adadad] disabled:hover:bg-white">{v}</button>
+                    ))}
+                  </div>
+                  <span className="text-[12px] text-muted">{configFocus === null || !config[configFocus] ? 'Pick a value field first, then a variable.' : 'Filled in per device when the install is sent. The filled-in values are never stored.'}</span>
+                </div>
               </div>
             </TabsContent>
           </Tabs>

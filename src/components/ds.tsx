@@ -3,6 +3,7 @@
  * frame "Extensible SSO"). Each one wraps a shared kit component where one exists.
  */
 import * as React from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { Input } from './ui/input';
 import { cn } from './ui/utils';
 import { UButton } from './uem';
@@ -107,7 +108,7 @@ export function InfoAlert({ children, tone = 'info' }: { children: React.ReactNo
   const tones = { info: 'bg-info-bg text-[#171717]', warn: 'bg-[#fff3e0] text-[#7b341e]', error: 'bg-[#fdecea] text-bad' };
   return (
     <div role={tone === 'error' ? 'alert' : 'status'} className={cn('flex items-start gap-2.5 rounded-[8px] px-5 py-3 text-[14px] leading-[22px]', tones[tone])}>
-      <span className="flex h-[22px] shrink-0 items-center"><img src={infoFill} alt="" width={20} height={20} className="size-5 shrink-0" /></span>
+      <span className="flex h-[22px] shrink-0 items-center">{tone === 'info' ? <img src={infoFill} alt="" width={20} height={20} className="size-5 shrink-0" /> : <AlertTriangle className="size-[18px] shrink-0" strokeWidth={1.7} aria-hidden />}</span>
       <p className="m-0 min-w-0 grow">{children}</p>
     </div>
   );

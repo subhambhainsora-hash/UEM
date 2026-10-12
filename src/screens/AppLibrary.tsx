@@ -1,21 +1,23 @@
 import * as React from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, ChevronDown, ChevronRight, Copy, Link2, MoreVertical, Search, Trash2, Upload, X } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronRight, Copy, Link2, ListChecks, MoreVertical, RefreshCw, Search, Trash2, Upload, X } from 'lucide-react';
 import { AppShell } from '../components/AppShell';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { Input } from '../components/ui/input';
-import { AppIcon, CountBadge, IconButton, LaterBadge, SigningBadge, UButton, UMenu, UMenuItem, UMenuSeparator } from '../components/uem';
+import { AppIcon, CountBadge, IconButton, SigningBadge, UButton, UMenu, UMenuItem, UMenuSeparator } from '../components/uem';
 import { cn } from '../components/ui/utils';
 import { libraryApps as seed, plural, signingState, todayLabel, type Build, type LibraryApp, type ReadBuild } from '../data';
 import { UndoRow, tabListClass, tabTriggerClass } from '../components/ds';
 import { useToast } from '../components/toast';
 import { AddInhouseDrawer } from './Drawers';
+import { LicenseAssignmentsDrawer } from './VppDrawers';
+import { failedCount, vppApps as vppSeed, type Assignment, type VppApp } from '../vpp';
 
 type Filter = 'all' | 'attention';
 
 /* L1 · App Groups: the in-house app library */
-export function AppLibraryPage() {
+export function AppLibraryPage({ initialTab = 'inhouse' }: { initialTab?: 'inhouse' | 'vpp' }) {
   const toast = useToast();
   const [apps, setApps] = React.useState<LibraryApp[]>(seed);
   const [openRow, setOpenRow] = React.useState<string | null>('crm');
@@ -25,6 +27,23 @@ export function AppLibraryPage() {
   const [confirm, setConfirm] = React.useState<{ app: string; kind: 'retire' | 'last' | 'remove'; version?: string } | null>(null);
   const [drawer, setDrawer] = React.useState<{ mode: 'upload' | 'manifest'; forApp?: LibraryApp } | null>(null);
   const [undo, setUndo] = React.useState<{ app: LibraryApp; index: number } | null>(null);
+  /* VPP licences: what Apple Business Manager exposes through the connected token. */
+  const [vpp, setVpp] = React.useState<VppApp[]>(vppSeed);
+  const [vq, setVq] = React.useState('');
+  const [vFailedOnly, setVFailedOnly] = React.useState(false);
+  const [assignFor, setAssignFor] = React.useState<VppApp | null>(null);
+  const [syncing, setSyncing] = React.useState(false);
+  const [syncedAgo, setSyncedAgo] = React.useState('2 hours ago');
+  const [tokenState] = React.useState<'ok' | 'expired'>('ok');
+  const vRows = vpp.filter((a) => (!vFailedOnly || failedCount(a) > 0) && (a.name + a.bundleId).toLowerCase().includes(vq.trim().toLowerCase()));
+  const failedApps = vpp.filter((a) => failedCount(a) > 0);
+  const failedTotal = vpp.reduce((n, a) => n + failedCount(a), 0);
+  const sync = () => { setSyncing(true); window.setTimeout(() => { setSyncing(false); setSyncedAgo('just now'); toast({ title: 'Synced with Apple Business Manager', sub: `${vpp.length} licensed apps, counts refreshed.` }); }, 1200); };
+  const retry = (a: VppApp, x: Assignment) => {
+    setVpp((v) => v.map((y) => (y.id === a.id ? { ...y, assignments: y.assignments.map((z) => (z === x ? { ...z, status: 'Pending' as const, reason: undefined } : z)) } : y)));
+    setAssignFor((cur) => (cur && cur.id === a.id ? { ...cur, assignments: cur.assignments.map((z) => (z === x ? { ...z, status: 'Pending' as const, reason: undefined } : z)) } : cur));
+    toast({ title: `Retrying ${a.name} on ${x.device}`, sub: a.available === 0 ? 'It will fail again until licences are available.' : 'The licence is assigned at the device’s next check-in.', tone: 'info' });
+  };
   const searchRef = React.useRef<HTMLInputElement>(null);
 
   const needsAttention = (a: LibraryApp) => ['expired', 'expiring'].includes(signingState(a.signingExpires).kind);
@@ -79,8 +98,14 @@ export function AppLibraryPage() {
       <div className="flex min-h-0 grow flex-col overflow-y-auto px-[50px] pt-8 pb-4">
         <h1 className="m-0 text-[24px] leading-8 font-bold text-heading">App Groups</h1>
         <p className="mt-1.5 mb-0 text-[15px] text-muted">
-          In-house apps your iOS profiles can install. Upload builds and roll back here; add apps to devices from a profile's App Catalog.
+          In-house apps and Apps and Books licences your Apple profiles can install. Manage builds and licences here; add apps to devices from a profile's App Catalog.
         </p>
+        <Tabs defaultValue={initialTab} className="mt-4 gap-0">
+          <TabsList className={tabListClass}>
+            <TabsTrigger value="inhouse" className={tabTriggerClass}>In-house apps <CountBadge n={apps.length} />{attention.length > 0 && <AlertTriangle aria-label={`${attention.length} need attention`} className="size-3.5 text-[#b45309]" strokeWidth={1.7} />}</TabsTrigger>
+            <TabsTrigger value="vpp" className={tabTriggerClass}>VPP licences <CountBadge n={vpp.length} />{failedTotal > 0 && <AlertTriangle aria-label={`${failedTotal} failed assignments`} className="size-3.5 text-bad" strokeWidth={1.7} />}</TabsTrigger>
+          </TabsList>
+          <TabsContent value="inhouse">
         {attention.length > 0 && (
           <div role="status" className="mt-4 flex items-start gap-2.5 rounded-[4px] border border-[#f5d8b8] bg-[#fff3e0] px-3.5 py-2.5 text-[14px] text-[#7b341e]">
             <AlertTriangle className="mt-0.5 size-4 shrink-0" strokeWidth={1.7} />
@@ -91,12 +116,6 @@ export function AppLibraryPage() {
             <button type="button" onClick={() => { setFilter('attention'); setQ(''); }} className="shrink-0 border-0 bg-transparent p-0 text-[13px] font-semibold text-[#7b341e] underline">Show {attention.length}</button>
           </div>
         )}
-        <Tabs defaultValue="inhouse" className="mt-4 gap-0">
-          <TabsList className={tabListClass}>
-            <TabsTrigger value="inhouse" className={tabTriggerClass}>In-house apps <CountBadge n={apps.length} active /></TabsTrigger>
-            <TabsTrigger value="vpp" className={tabTriggerClass}>VPP licences <LaterBadge /></TabsTrigger>
-          </TabsList>
-          <TabsContent value="inhouse">
             <div className="mt-5 flex items-center gap-3">
               <label className="flex h-10 w-[340px] items-center gap-2.5 rounded-[6px] border border-line px-3 focus-within:border-uem">
                 <Search className="size-4 text-muted" strokeWidth={1.7} />
@@ -250,9 +269,76 @@ export function AppLibraryPage() {
             {undo && <div className="mt-3"><UndoRow onUndo={undoRemove}>Removed: <span className="text-ink">{undo.app.name}</span> and its {plural(undo.app.builds.length, 'build')}. No device was affected.</UndoRow></div>}
             <p className="mt-3 text-[13px] text-muted" aria-live="polite">Showing {rows.length} of {apps.length} apps{filter === 'attention' ? ' that need attention' : ''}</p>
           </TabsContent>
-          <TabsContent value="vpp" className="pt-10 text-center text-[14px] text-muted">VPP licences arrive with Apps and Books.</TabsContent>
+          <TabsContent value="vpp">
+            <div className="mt-5 flex flex-col gap-4">
+              {tokenState === 'expired' && <div role="alert" className="flex items-center gap-2.5 rounded-[4px] border border-[#f5c6c2] bg-[#fdecea] px-3.5 py-2.5 text-[14px] text-bad"><AlertTriangle className="size-4 shrink-0" strokeWidth={1.7} /><span className="grow">Your VPP token is expired. New licences can't be assigned.</span><Link to="/v3" className="font-semibold text-bad underline">Open VPP Token</Link></div>}
+              {failedTotal > 0 && (
+                <div role="status" className="flex items-center gap-2.5 rounded-[4px] border border-[#f5d8b8] bg-[#fff3e0] px-3.5 py-2.5 text-[14px] text-[#7b341e]">
+                  <AlertTriangle className="size-4 shrink-0" strokeWidth={1.7} />
+                  <span className="grow"><b className="font-semibold">{plural(failedTotal, 'licence assignment')} failed</b> across {plural(failedApps.length, 'app')}: {failedApps.map((a) => a.name).join(', ')}. Usually the licence pool is empty; buy more in Apple Business Manager, then retry.</span>
+                  <button type="button" onClick={() => setVFailedOnly(true)} className="shrink-0 border-0 bg-transparent p-0 text-[13px] font-semibold text-[#7b341e] underline">Show failed</button>
+                </div>
+              )}
+              <p className="m-0 text-[14px] text-muted">Apps and licences purchased in Apple Business Manager. Assign them to devices from an Apple profile › App Catalog › VPP.</p>
+              <div className="flex items-center gap-3">
+                <label className="flex h-10 w-[340px] items-center gap-2.5 rounded-[6px] border border-line px-3 focus-within:border-uem">
+                  <Search className="size-4 text-muted" strokeWidth={1.7} />
+                  <Input value={vq} onChange={(e) => setVq(e.target.value)} onKeyDown={(e) => e.key === 'Escape' && setVq('')} placeholder="Search by name or bundle ID" aria-label="Search VPP apps" className="h-auto border-0 bg-transparent p-0 text-[15px] shadow-none focus-visible:ring-0" />
+                  {vq && <button type="button" aria-label="Clear search" onClick={() => setVq('')} className="flex border-0 bg-transparent p-0 text-muted hover:text-ink"><X className="size-4" strokeWidth={1.7} /></button>}
+                </label>
+                {failedTotal > 0 && (
+                  <div role="group" aria-label="Filter" className="flex gap-1.5">
+                    <button type="button" aria-pressed={!vFailedOnly} onClick={() => setVFailedOnly(false)} className={chip(!vFailedOnly)}>All · {vpp.length}</button>
+                    <button type="button" aria-pressed={vFailedOnly} onClick={() => setVFailedOnly(true)} className={chip(vFailedOnly)}>Failed assignments · {failedApps.length}</button>
+                  </div>
+                )}
+                <span className="grow" />
+                <span className="text-[13px] text-muted">Last synced {syncedAgo}</span>
+                <UButton tone="outline" size="lg" disabled={syncing} onClick={sync}><RefreshCw className={cn(syncing && 'animate-spin')} strokeWidth={1.7} />{syncing ? 'Syncing…' : 'Sync'}</UButton>
+              </div>
+              <div className="overflow-hidden rounded-[6px] border border-line">
+                <table className="w-full border-collapse font-sans">
+                  <thead className="bg-[#fafafa]"><tr><th className={th}>App</th><th className={th}>Platform</th><th className={th}>Licences</th><th className={th}>Assignments</th><th className="w-12"><span className="sr-only">Actions</span></th></tr></thead>
+                  <tbody>
+                    {vRows.length === 0 && <tr><td colSpan={5} className="px-4 py-10 text-center text-[14px] text-muted">{vq ? <>No apps match “{vq}”. <button type="button" onClick={() => setVq('')} className="border-0 bg-transparent p-0 font-semibold text-uem hover:underline">Clear search</button></> : 'No failed assignments.'}</td></tr>}
+                    {vRows.map((a) => {
+                      const failed = failedCount(a);
+                      const installed = a.assignments.filter((x) => x.status === 'Installed').length;
+                      return (
+                        <tr key={a.id} className="border-t border-row text-[14px] transition-colors hover:bg-[#fafafa]">
+                          <td className="px-4 py-3">
+                            <span className="flex items-center gap-3">
+                              <AppIcon logo={a.logo} name={a.name} color={a.color} size={32} />
+                              <span className="flex min-w-0 flex-col"><span className="text-[15px] font-semibold">{a.name}</span><span className={cn('text-[12px] text-muted', a.metadataMissing && 'italic')}>{a.bundleId}</span></span>
+                            </span>
+                          </td>
+                          <td className="px-4">{a.platforms.join(', ')}</td>
+                          <td className="px-4">
+                            {a.total === null ? 'Unlimited' : <><b className={cn('font-semibold', a.available === 0 && 'text-[#7b341e]')}>{a.available}</b> <span className="text-muted">of {a.total} available</span></>}
+                            {a.available === 0 && <span className="mt-0.5 block text-[12px] text-[#7b341e]">Pool empty · new devices won't get it</span>}
+                            {a.userLicenseOnly && <span className="mt-0.5 block text-[12px] text-muted">User licences only</span>}
+                          </td>
+                          <td className="px-4">
+                            {a.assignments.length === 0 ? <span className="text-muted">None yet</span> : <span>{plural(installed, 'install')}{failed > 0 && <span className="ml-1.5 inline-flex items-center gap-1 rounded-[8px] bg-[#fdecea] px-2 py-px text-[12px] font-medium text-bad"><AlertTriangle className="size-3" strokeWidth={2} />{failed} failed</span>}</span>}
+                          </td>
+                          <td className="px-2">
+                            <UMenu trigger={<IconButton label={`More actions for ${a.name}`}><MoreVertical className="size-4" strokeWidth={1.7} /></IconButton>}>
+                              <UMenuItem icon={ListChecks} onSelect={() => setAssignFor(a)}>View licence assignments</UMenuItem>
+                              <UMenuItem icon={Copy} onSelect={() => { navigator.clipboard?.writeText(a.bundleId); toast({ title: 'Bundle ID copied', sub: a.bundleId, tone: 'info' }); }} disabled={a.metadataMissing}>Copy bundle ID</UMenuItem>
+                            </UMenu>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <p className="m-0 text-[13px] text-muted" aria-live="polite">Showing {vRows.length} of {vpp.length} licensed apps{vFailedOnly ? ' with failed assignments' : ''}</p>
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
+      <LicenseAssignmentsDrawer app={assignFor} onOpenChange={(o) => !o && setAssignFor(null)} onRetry={retry} initialFilter={vFailedOnly ? 'Failed' : 'all'} />
       <AddInhouseDrawer
         open={!!drawer}
         onOpenChange={(o) => !o && setDrawer(null)}
