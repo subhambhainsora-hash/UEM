@@ -6,7 +6,7 @@
 import * as React from 'react';
 import { Apple, RotateCcw, Search, Smartphone, X } from 'lucide-react';
 import { CountBadge, USwitch } from '../components/uem';
-import { FieldLabel, InfoAlert, InfoDot, ProfileFields, SectionTitle, tabListClass, tabTriggerClass } from '../components/ds';
+import { FieldLabel, InfoAlert, InfoDot, LoadFailed, ProfileFields, SectionTitle, SkeletonRows, tabListClass, tabTriggerClass } from '../components/ds';
 import { Input } from '../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -240,12 +240,28 @@ function RestrictionRow({ row, value, onValue, subs, onSub, highlight }: {
 }
 
 /* Section ------------------------------------------------------------------- */
-export function RestrictionSection({ onChange, initialTab = 'Device Functionality', values, onValues }: {
+export type LoadPhase = 'ready' | 'loading' | 'failed';
+/** Simulated fetch for the prototype: loading resolves to ready; failed stays failed until Retry. */
+export function useLoadPhase(initial: LoadPhase = 'ready', ms = 1400) {
+  const [phase, setPhase] = React.useState<LoadPhase>(initial);
+  const [retrying, setRetrying] = React.useState(false);
+  React.useEffect(() => {
+    if (phase !== 'loading') return;
+    const t = window.setTimeout(() => { setPhase('ready'); setRetrying(false); }, ms);
+    return () => window.clearTimeout(t);
+  }, [phase, ms]);
+  const retry = () => { setRetrying(true); setPhase('loading'); };
+  return { phase, retry, retrying };
+}
+
+export function RestrictionSection({ onChange, initialTab = 'Device Functionality', values, onValues, load = 'ready' }: {
   onChange?: () => void;
   initialTab?: RestrictionTab;
   values: Record<string, string>;
   onValues: (next: Record<string, string>) => void;
+  load?: LoadPhase;
 }) {
+  const { phase, retry } = useLoadPhase(load);
   const [tab, setTab] = React.useState<RestrictionTab>(initialTab);
   const [subs, setSubs] = React.useState<Record<string, boolean>>({});
   const [q, setQ] = React.useState('');
@@ -271,6 +287,15 @@ export function RestrictionSection({ onChange, initialTab = 'Device Functionalit
       <SectionTitle sub="What users can do on devices carrying this profile. Apple’s defaults allow everything; each Deny is a restriction devices enforce.">Restriction</SectionTitle>
       <ProfileFields onChange={onChange} />
 
+      {phase === 'failed' && <LoadFailed what="restriction settings" onRetry={retry} />}
+      {phase === 'loading' && (
+        <div className="flex flex-col gap-5">
+          <div className="flex items-center gap-3"><div className="h-11 w-[340px] rounded-[6px] border border-line" /><span className="text-[13px] text-muted">Loading restriction settings…</span></div>
+          <div className="flex h-11 gap-6 border-b border-line px-4">{restrictionTabs.slice(0, 6).map((t) => <span key={t} className="flex items-center"><span className="block h-3.5 w-[90px] rounded-[4px] bg-[#eef0f3] skeleton-shimmer" /></span>)}</div>
+          <SkeletonRows rows={7} />
+        </div>
+      )}
+      {phase === 'ready' && (<>
       <div className="flex items-center gap-3">
         <label className="flex h-11 w-[340px] items-center gap-2.5 rounded-[6px] border border-line px-3 focus-within:border-uem">
           <Search className="size-4 text-muted" strokeWidth={1.7} />
@@ -330,6 +355,7 @@ export function RestrictionSection({ onChange, initialTab = 'Device Functionalit
           </div>
         </Tabs>
       )}
+      </>)}
     </div>
   );
 }

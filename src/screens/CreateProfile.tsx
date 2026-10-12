@@ -90,15 +90,26 @@ export function CreateProfilePage({ initialStep = 1 }: { initialStep?: Step }) {
 
         <div className="mt-8 flex grow flex-col gap-5">
           {step === 1 && (
-            <>
+            <div className="grid grid-cols-1 gap-x-16 gap-y-5 lg:grid-cols-[480px_minmax(0,420px)]">
+              <div className="flex flex-col gap-5">
               <SectionTitle sub="How this profile appears in the list and in audit entries.">About the profile</SectionTitle>
-              <Field className="w-[480px]" label="Profile name" required info="Shown in the profile list and on devices under Settings › General › VPN & Device Management" placeholder="e.g., Support iPads" value={name} onChange={(e) => setName(e.target.value)} error={tried ? nameErr : undefined} maxLength={60} autoFocus onKeyDown={(e) => e.key === 'Enter' && next()} />
-              <div className="flex w-[480px] flex-col gap-2">
+              <Field label="Profile name" required info="Shown in the profile list and on devices under Settings › General › VPN & Device Management" placeholder="e.g., Support iPads" value={name} onChange={(e) => setName(e.target.value)} error={tried ? nameErr : undefined} maxLength={60} autoFocus onKeyDown={(e) => e.key === 'Enter' && next()} />
+              <div className="flex flex-col gap-2">
                 <FieldLabel htmlFor="profile-desc" info="Why this profile exists and who it is for. Optional, but it saves the next admin a guess">Description</FieldLabel>
                 <textarea id="profile-desc" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Brief description of this profile" rows={4} maxLength={240} className={cn(fieldClass, 'h-auto resize-y py-2.5 outline-none')} />
-                <span className="text-[12px] text-muted">{desc.length}/240</span>
+                <span className="text-[12px] tabular-nums text-muted">{desc.length}/240</span>
               </div>
-            </>
+              </div>
+              <aside className="flex flex-col gap-3 border-t border-line pt-5 lg:mt-[38px] lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8">
+                <p className="m-0 text-[13px] font-semibold tracking-[0.02em] text-muted uppercase">What a profile holds</p>
+                <ul className="m-0 flex list-none flex-col gap-2.5 p-0 text-[14px] leading-5 text-ink">
+                  <li className="flex gap-3"><span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-uem" />Apps from the App Store, your App Groups and Apple VPP, with per-app settings.</li>
+                  <li className="flex gap-3"><span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-uem" />Restrictions, passcode rules, Wi-Fi networks, email accounts and web shortcuts.</li>
+                  <li className="flex gap-3"><span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-uem" />Kiosk mode and the apps allowed to use Extensible SSO.</li>
+                </ul>
+                <p className="m-0 text-[13px] leading-5 text-muted">Devices receive nothing until the configuration is submitted. Every submit is recorded in the audit log with who made it.</p>
+              </aside>
+            </div>
           )}
 
           {step === 2 && (
@@ -121,7 +132,7 @@ export function CreateProfilePage({ initialStep = 1 }: { initialStep?: Step }) {
                     <span className="text-[13px] text-muted" aria-live="polite">{picked.length === 0 ? 'No group selected. The profile is created as a draft with no devices.' : `${plural(picked.length, 'group')} · ${plural(devices, 'device')} will receive this profile`}</span>
                   </div>
                   <div className="overflow-hidden rounded-[6px] border border-line">
-                    <table className="w-full border-collapse">
+                    <table className="w-full border-collapse tabular-nums">
                       <thead className="bg-[#fafafa]">
                         <tr>
                           <th className="w-12 px-4 py-3"><UCheckbox aria-label="Select all shown groups" checked={allShown} onCheckedChange={(v) => setPicked((p) => (v ? Array.from(new Set([...p, ...shown.map((g) => g.id)])) : p.filter((id) => !shown.some((g) => g.id === id))))} /></th>
