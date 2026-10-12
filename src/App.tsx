@@ -3,6 +3,7 @@ import { Link, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { CheckCircle2, Copy as CopyIcon, Download, LayoutGrid, MoreVertical, PencilLine, Plus, Search, Send, Trash2, X } from 'lucide-react';
 import { ToastProvider, useToast } from './components/toast';
 import { ProfilePage, type ProfileState } from './screens/ProfilePage';
+import { CreateProfilePage } from './screens/CreateProfile';
 import { AppLibraryPage } from './screens/AppLibrary';
 import { VppTokenPage } from './screens/VppToken';
 import type { TokenState } from './vpp';
@@ -40,14 +41,25 @@ const screens: { id: string; label: string; state?: ProfileState; library?: bool
   { id: 'v5', label: 'App Catalog · VPP tab, no token', state: { tab: 'vpp', vppToken: 'none' } },
   { id: 'v6', label: 'Add VPP apps drawer', state: { tab: 'vpp', drawer: 'vpp' } },
   { id: 'v7', label: 'App Groups · VPP licences', library: true, libraryTab: 'vpp' },
+  { id: 'r1', label: 'Restriction · Device Functionality', state: { section: 'Restriction' } },
+  { id: 'r2', label: 'Restriction · Security', state: { section: 'Restriction', restrictionTab: 'Security' } },
+  { id: 'r3', label: 'Restriction · Apps', state: { section: 'Restriction', restrictionTab: 'Apps' } },
+  { id: 'r4', label: 'Restriction · Date & Time', state: { section: 'Restriction', restrictionTab: 'Date & Time' } },
+  { id: 'pc1', label: 'Passcode · empty', state: { section: 'Passcode' } },
+  { id: 'pc2', label: 'Passcode · add restriction', state: { section: 'Passcode', passcode: 'form' } },
+  { id: 'pc3', label: 'Passcode · list', state: { section: 'Passcode', passcode: 'list' } },
+  { id: 'w1', label: 'Wifi · empty', state: { section: 'Wifi' } },
+  { id: 'w2', label: 'Wifi · add network', state: { section: 'Wifi', wifi: 'form' } },
+  { id: 'w3', label: 'Wifi · list', state: { section: 'Wifi', wifi: 'list' } },
+  { id: 'n1', label: 'Per-App VPN', state: { section: 'Per-App VPN', vpn: 'miniorange' } },
 ];
 
 /* Profiles list · the page the sidebar's "Profiles" item opens --------------- */
-interface ProfileRow { id: string; name: string; platform: 'iOS' | 'iPadOS'; devices: number; apps: number; updated: string; by: string; status: 'Published' | 'Draft' }
+interface ProfileRow { id: string; name: string; platform: 'iOS' | 'iPadOS'; devices: number; apps: number; groups: string[]; created: string; createdBy: string; updated: string; by: string; status: 'Published' | 'Draft' }
 const seedProfiles: ProfileRow[] = [
-  { id: 'sales', name: profile.name, platform: 'iOS', devices: profile.deviceCount, apps: 5, updated: '12 Oct 2026', by: 'Abhijeet T.', status: 'Published' },
-  { id: 'kiosk', name: 'Warehouse Kiosk', platform: 'iOS', devices: 36, apps: 2, updated: '3 Oct 2026', by: 'Vedika S.', status: 'Published' },
-  { id: 'exec', name: 'Exec iPads', platform: 'iPadOS', devices: 12, apps: 7, updated: '28 Sep 2026', by: 'Abhijeet T.', status: 'Draft' },
+  { id: 'sales', name: profile.name, platform: 'iOS', devices: profile.deviceCount, apps: 5, groups: ['Field Sales'], created: '14 Aug 2026', createdBy: 'Abhijeet T.', updated: '12 Oct 2026', by: 'Abhijeet T.', status: 'Published' },
+  { id: 'kiosk', name: 'Warehouse Kiosk', platform: 'iOS', devices: 36, apps: 2, groups: ['Warehouse Kiosks'], created: '2 Jun 2026', createdBy: 'Vedika S.', updated: '3 Oct 2026', by: 'Vedika S.', status: 'Published' },
+  { id: 'exec', name: 'Exec iPads', platform: 'iPadOS', devices: 12, apps: 7, groups: [], created: '28 Sep 2026', createdBy: 'Abhijeet T.', updated: '28 Sep 2026', by: 'Abhijeet T.', status: 'Draft' },
 ];
 
 function StatusChip({ status }: { status: ProfileRow['status'] }) {
@@ -71,7 +83,7 @@ function ProfilesPage() {
   const th = 'px-4 py-3 text-left text-[14px] font-semibold text-heading';
 
   const duplicate = (p: ProfileRow) => {
-    const copy: ProfileRow = { ...p, id: `${p.id}-${Date.now()}`, name: `${p.name} copy`, devices: 0, status: 'Draft', updated: '12 Oct 2026', by: 'Abhijeet T.' };
+    const copy: ProfileRow = { ...p, id: `${p.id}-${Date.now()}`, name: `${p.name} copy`, devices: 0, groups: [], status: 'Draft', created: '12 Oct 2026', createdBy: 'Abhijeet T.', updated: '12 Oct 2026', by: 'Abhijeet T.' };
     setRows((r) => [copy, ...r]);
     toast({ title: `${copy.name} created as a draft`, sub: 'Same apps and settings, no devices assigned yet.', action: { label: 'Open it', onClick: () => navigate('/d1') } });
   };
@@ -92,7 +104,7 @@ function ProfilesPage() {
   };
   /* The profile as a document an auditor can read. */
   const exportProfile = (p: ProfileRow) => {
-    const lines = [p.name, `Exported ${new Date().toLocaleString()}`, '', `Platform: ${p.platform}`, `Status: ${p.status}`, `Devices: ${p.devices}`, `Apps: ${p.apps}`, `Last updated: ${p.updated} by ${p.by}`, '', 'Sections: App Catalog, Kiosk, Extensible SSO, Email, Web Shortcuts, Web Content Filter'];
+    const lines = [p.name, `Exported ${new Date().toLocaleString()}`, '', `Platform: ${p.platform}`, `Status: ${p.status}`, `Devices: ${p.devices}`, `Apps: ${p.apps}`, `Last updated: ${p.updated} by ${p.by}`, '', `Device groups: ${p.groups.join(', ') || 'none'}`, `Created: ${p.created} by ${p.createdBy}`, '', 'Sections: App Catalog, Restriction, Passcode, Per-App VPN, Wifi, Email, Web Shortcuts, Web Content Filter, Kiosk, Extensible SSO'];
     const url = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' }));
     const a = document.createElement('a'); a.href = url; a.download = `${p.name.replace(/\s+/g, '-').toLowerCase()}-profile.txt`; document.body.appendChild(a); a.click();
     window.setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
@@ -108,7 +120,7 @@ function ProfilesPage() {
             <p className="mt-1.5 mb-0 text-[15px] text-muted">Apple device profiles. Each one bundles apps, restrictions and settings for a device group.</p>
           </div>
           <UButton size="lg" asChild>
-            <Link to="/d1"><Plus strokeWidth={1.7} />Create profile</Link>
+            <Link to="/new"><Plus strokeWidth={1.7} />Create profile</Link>
           </UButton>
         </div>
         <div className="mt-6 flex items-center gap-3">
@@ -123,12 +135,12 @@ function ProfilesPage() {
           <table className="w-full border-collapse">
             <thead className="bg-[#fafafa]">
               <tr>
-                <th className={th}>Profile</th><th className={th}>Platform</th><th className={th}>Devices</th><th className={th}>Apps</th><th className={th}>Status</th><th className={th}>Last updated</th><th className="w-12"><span className="sr-only">Actions</span></th>
+                <th className={th}>Profile</th><th className={th}>Platform</th><th className={th}>Device groups</th><th className={th}>Apps</th><th className={th}>Status</th><th className={th}>Created</th><th className={th}>Last updated</th><th className="w-12"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
             <tbody>
               {shown.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-10 text-center text-[14px] text-muted">
+                <tr><td colSpan={8} className="px-4 py-10 text-center text-[14px] text-muted">
                   {q ? <>No profiles match “{q}”. <button type="button" onClick={() => setQ('')} className="border-0 bg-transparent p-0 font-semibold text-uem hover:underline">Clear search</button></> : 'No profiles yet. Create one to start managing Apple devices.'}
                 </td></tr>
               )}
@@ -137,10 +149,11 @@ function ProfilesPage() {
                 <tr className={cn('border-t border-row text-[14px] transition-colors', confirm?.id === p.id ? 'bg-[#fafafa]' : 'cursor-pointer hover:bg-[#fafafa]')} onClick={() => confirm?.id !== p.id && navigate('/d1')}>
                   <td className="px-4 py-3"><Link to="/d1" onClick={(e) => e.stopPropagation()} className="font-semibold text-uem no-underline hover:underline">{p.name}</Link></td>
                   <td className="px-4">{p.platform}</td>
-                  <td className="px-4">{p.devices ? plural(p.devices, 'device') : <span className="text-muted">None assigned</span>}</td>
+                  <td className="px-4">{p.groups.length ? <>{p.groups.join(', ')}<span className="block text-[12px] text-muted">{plural(p.devices, 'device')}</span></> : <span className="text-muted">None assigned</span>}</td>
                   <td className="px-4">{plural(p.apps, 'app')}</td>
                   <td className="px-4"><StatusChip status={p.status} /></td>
-                  <td className="px-4 text-muted">{p.updated} · {p.by}</td>
+                  <td className="px-4 text-muted">{p.created}<span className="block text-[12px]">{p.createdBy}</span></td>
+                  <td className="px-4 text-muted">{p.updated}<span className="block text-[12px]">{p.by}</span></td>
                   <td className="px-2" onClick={(e) => e.stopPropagation()}>
                     <UMenu trigger={<IconButton label={`More actions for ${p.name}`}><MoreVertical className="size-4" strokeWidth={1.7} /></IconButton>}>
                       <UMenuItem icon={PencilLine} onSelect={() => navigate('/d1')}>Open</UMenuItem>
@@ -154,7 +167,7 @@ function ProfilesPage() {
                 </tr>
                 {confirm?.id === p.id && (
                   <tr className="bg-[#fafafa]">
-                    <td colSpan={7} className="px-4 pb-3">
+                    <td colSpan={8} className="px-4 pb-3">
                       <div role="alert" className="flex flex-col gap-2 text-[13px] text-muted">
                         {confirm.kind === 'delete' ? (
                           <>
@@ -208,6 +221,8 @@ function ScreenNav() {
           </div>
           <div className="max-h-[60vh] overflow-y-auto py-1">
             <Link to="/" onClick={() => setOpen(false)} className={cn('block px-3 py-1.5 text-[13px] text-ink no-underline hover:bg-[#f3f3f5]', pathname === '/' && 'bg-nav-bg')}>Profiles list</Link>
+            <Link to="/new" onClick={() => setOpen(false)} className={cn('block px-3 py-1.5 text-[13px] text-ink no-underline hover:bg-[#f3f3f5]', pathname === '/new' && 'bg-nav-bg')}>Create profile · step 1</Link>
+            <Link to="/new2" onClick={() => setOpen(false)} className={cn('block px-3 py-1.5 text-[13px] text-ink no-underline hover:bg-[#f3f3f5]', pathname === '/new2' && 'bg-nav-bg')}>Create profile · device groups</Link>
             {screens.map((s) => (
               <Link key={s.id} to={`/${s.id}`} onClick={() => setOpen(false)} className={cn('block px-3 py-1.5 text-[13px] text-ink no-underline hover:bg-[#f3f3f5]', current?.id === s.id && 'bg-nav-bg')}>
                 <span className="mr-2 inline-block w-6 text-[11px] font-semibold text-muted uppercase">{s.id}</span>{s.label}
@@ -235,6 +250,8 @@ export default function App() {
     <div className="app-root">
       <Routes>
         <Route path="/" element={<ProfilesPage />} />
+        <Route path="/new" element={<CreateProfilePage />} />
+        <Route path="/new2" element={<CreateProfilePage initialStep={2} />} />
         {screens.map((s) => (
           <Route key={s.id} path={`/${s.id}`} element={s.token ? <VppTokenPage key={s.id} initial={s.token} /> : s.library ? <AppLibraryPage key={s.id} initialTab={s.libraryTab} /> : <ProfilePage key={s.id} initial={s.state} />} />
         ))}

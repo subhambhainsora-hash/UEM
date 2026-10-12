@@ -6,6 +6,8 @@ import { AddInhouseDrawer, AddStoreDrawer, AppSettingsDrawer } from './Drawers';
 import { DiscardDialog, type Issue } from './Dialogs';
 import { KioskSection, SsoSection, type KioskMode } from './KioskSso';
 import { EmailSection, WebContentFilterSection, WebShortcutsSection } from './PolicySections';
+import { PerAppVpnSection, RestrictionSection, type RestrictionTab } from './Restriction';
+import { PasscodeSection, WifiSection } from './PasscodeWifi';
 import { ProfileFields, SectionTitle } from '../components/ds';
 import { appStoreApps, enterpriseApps, libraryApps, plural, profile, storeSearchResults, type CatalogApp } from '../data';
 import { useToast } from '../components/toast';
@@ -20,6 +22,11 @@ export interface ProfileState {
   vppToken?: TokenState;
   kiosk?: KioskMode;
   kioskPicker?: boolean;
+  restrictionTab?: RestrictionTab;
+  /** Seed for the list sections: nothing configured, the add drawer open, or one item in the list. */
+  passcode?: 'empty' | 'form' | 'list';
+  wifi?: 'empty' | 'form' | 'list';
+  vpn?: 'none' | 'miniorange';
 }
 
 export function ProfilePage({ initial = {} }: { initial?: ProfileState }) {
@@ -54,6 +61,8 @@ export function ProfilePage({ initial = {} }: { initial?: ProfileState }) {
     initial.dialog === 'remove' ? ['slack', 'outlook', 'crm', 'survey'] : ['slack', 'outlook', 'crm'],
   );
   const [ssoAll, setSsoAll] = React.useState(false);
+  const [restrictions, setRestrictions] = React.useState<Record<string, string>>({});
+  const [vpn, setVpn] = React.useState<'none' | 'miniorange'>(initial.vpn ?? 'none');
   const catalog = [...store, ...ent];
 
   /* Unsaved-change tracking. Every mutation that would reach devices bumps the count. */
@@ -67,7 +76,7 @@ export function ProfilePage({ initial = {} }: { initial?: ProfileState }) {
   /* Discard: back to what devices have today. */
   const discard = () => {
     setStore(appStoreApps); setEnt(enterpriseApps); setCountry('United States'); setKiosk(initial.kiosk ?? 'single'); setKioskApp('survey');
-    setSsoAllowed(['slack', 'outlook', 'crm']); setSsoAll(false); setVppIds(['lightroom', 'word', 'slack-ipad', 'fieldforce']); setShowIssues(false); clean(); setStatus('idle');
+    setSsoAllowed(['slack', 'outlook', 'crm']); setSsoAll(false); setVppIds(['lightroom', 'word', 'slack-ipad', 'fieldforce']); setRestrictions({}); setVpn(initial.vpn ?? 'none'); setShowIssues(false); clean(); setStatus('idle');
     toast({ title: 'Changes discarded', sub: `${profile.name} is back to what its ${plural(profile.deviceCount, 'device')} have today.`, tone: 'info' });
   };
   React.useEffect(() => {
@@ -188,12 +197,16 @@ export function ProfilePage({ initial = {} }: { initial?: ProfileState }) {
           error={showIssues ? issues.find((i) => i.section === 'Extensible SSO')?.message : undefined}
         />
       )}
+      {section === 'Restriction' && <RestrictionSection onChange={touch} initialTab={initial.restrictionTab} values={restrictions} onValues={setRestrictions} />}
+      {section === 'Passcode' && <PasscodeSection onChange={touch} initial={initial.passcode} />}
+      {section === 'Wifi' && <WifiSection onChange={touch} initial={initial.wifi} />}
+      {section === 'Per-App VPN' && <PerAppVpnSection onChange={touch} value={vpn} onValue={setVpn} appCount={catalog.length + vppInProfile.length} onOpenCatalog={() => setSection('App Catalog')} />}
       {section === 'Email' && <EmailSection onChange={touch} />}
       {section === 'Web Shortcuts' && <WebShortcutsSection onChange={touch} />}
       {section === 'Web Content Filter' && <WebContentFilterSection onChange={touch} />}
-      {!['App Catalog', 'Kiosk', 'Extensible SSO', 'Email', 'Web Shortcuts', 'Web Content Filter'].includes(section) && (
+      {!['App Catalog', 'Kiosk', 'Extensible SSO', 'Email', 'Web Shortcuts', 'Web Content Filter', 'Restriction', 'Passcode', 'Wifi', 'Per-App VPN'].includes(section) && (
         <div className="flex flex-col gap-5">
-          <SectionTitle sub="This section keeps its current screens; it isn't part of the App Catalog design.">{section}</SectionTitle>
+          <SectionTitle sub="This section keeps its current screens; it isn't part of this design pass yet.">{section}</SectionTitle>
           <ProfileFields onChange={touch} />
         </div>
       )}

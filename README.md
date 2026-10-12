@@ -71,12 +71,16 @@ App Store apps show their real App Store artwork, fetched from Apple's iTunes Se
 - **Builds can't be retired to nothing.** Retiring the only available build is blocked; retiring any other asks first and says which build devices roll back to and how many are affected.
 - **Signing state is explicit.** Expired, expiring within 60 days and valid signing each show an icon and text, in the library, the catalog and the add drawer. Expired apps can't be added to a profile.
 - **"Allow every app" for SSO asks first** and shows a persistent warning while it is on.
+- **Restriction** holds the full iOS restriction payload in ten categories. Every row shows the minimum iOS and whether it applies on BYOD or only supervised devices; a Deny that has a knock-on effect (no camera, no Find My, free copy-paste) says so under the row. A search box finds a setting across categories; tabs count what is restricted and can be reset to Apple's defaults; sub-settings disable when their parent is denied.
+- **Passcode and Wifi** are lists: empty state → drawer with validation (length and attempt ranges, SSID and password rules, proxy fields) → table with Edit, Duplicate and an inline Remove that states what devices do, plus an undo row. Wi-Fi passwords stay masked with a reveal per row; WEP is flagged insecure; a wipe threshold under 5 failed attempts is warned.
+- **Per-App VPN** picks the provider and points to the per-app switch in App Catalog settings.
+- **Create profile** is a three-step flow: name and description → device or application groups (multi-select table with a BYOD caveat, empty state for application groups) → summary, then into Profile configuration as a draft.
 
 Layout: the app has a 1180px minimum width and scrolls on narrower windows. On short screens the working area scrolls while the header, sidebar and footer stay put. The "Prototype" chip in the header switches between screen states.
 
 Data is mock data in `src/data.ts`. There is no backend yet.
 
 ## Prototype routes
-`/#/` Profiles · `/#/l1` App Groups · `/#/d1`–`/#/d9` App Catalog states · `/#/s1`, `/#/s2` App settings drawers · `/#/k1`–`/#/k4` Kiosk and SSO · `/#/p1`–`/#/p3` Email, Web Shortcuts, Web Content Filter · `/#/v1`–`/#/v3` Apple VPP Token states · `/#/v4`–`/#/v6` App Catalog VPP tab · `/#/v7` App Groups VPP licences.
+`/#/` Profiles · `/#/l1` App Groups · `/#/d1`–`/#/d9` App Catalog states · `/#/s1`, `/#/s2` App settings drawers · `/#/k1`–`/#/k4` Kiosk and SSO · `/#/p1`–`/#/p3` Email, Web Shortcuts, Web Content Filter · `/#/v1`–`/#/v3` Apple VPP Token states · `/#/v4`–`/#/v6` App Catalog VPP tab · `/#/v7` App Groups VPP licences · `/#/r1`–`/#/r4` Restriction categories · `/#/pc1`–`/#/pc3` Passcode empty / drawer / list · `/#/w1`–`/#/w3` Wifi empty / drawer / list · `/#/n1` Per-App VPN · `/#/new`, `/#/new2` Create profile steps.
 
 Every clickable control does something: sidebar items outside the built screens say so in a toast, the sidebar collapses, the org and account menus open, row triple-dot menus act, drawers read a real file pick. The click crawler in the design audit (`scratchpad/audit2/crawl.js` during development) was used to verify this.
