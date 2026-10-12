@@ -1,11 +1,11 @@
 import * as React from 'react';
-import { Info, Search, Upload } from 'lucide-react';
+import { Search, Upload } from 'lucide-react';
 import { Input } from '../components/ui/input';
-import { ToggleGroup, ToggleGroupItem } from '../components/ui/toggle-group';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 import { AppIcon, Drawer, SigningBadge, SourceBadge, ToggleRow, UButton, UCheckbox } from '../components/uem';
 import { LastBuildDialog } from './Dialogs';
-import { tabListClass, tabTriggerClass } from '../components/ds';
+import emptyGlobe from '../assets/ds/empty-globe.svg';
+import { EmptyState, Field, InfoAlert, tabListClass, tabTriggerClass } from '../components/ds';
 import { cn } from '../components/ui/utils';
 import { storeSearchResults, libraryApps, signingState, plural, type CatalogApp } from '../data';
 
@@ -51,6 +51,7 @@ export function AddStoreDrawer({
         </label>
         <p className="mt-4 mb-2 text-[12px] text-muted">{results.length} results</p>
         <div className="overflow-hidden rounded-[6px] border border-line">
+          {results.length === 0 && <EmptyState icon={emptyGlobe} title={`No apps match “${q}”`} sub="Try the app’s exact name, or check the App Store country." className="min-h-[160px] rounded-none border-0" />}
           {results.map((r) => {
             const inProfile = existing.includes(r.id);
             const on = inProfile || sel.includes(r.id);
@@ -89,7 +90,6 @@ export function AddInhouseDrawer({
   const [mode, setMode] = React.useState(initialMode);
   const [sel, setSel] = React.useState<string[]>(['expense']);
   React.useEffect(() => setMode(initialMode), [initialMode, open]);
-  const seg = 'h-[38px] flex-1 rounded-[6px] text-[14px] font-medium text-ink data-[state=on]:bg-white data-[state=on]:text-uem data-[state=on]:shadow-[0_1px_2px_rgba(0,0,0,0.12)]';
   const footer =
     mode === 'library' ? (
       <>
@@ -106,12 +106,14 @@ export function AddInhouseDrawer({
     );
   return (
     <Drawer open={open} onOpenChange={onOpenChange} title="Add in-house apps" subtitle="Pick from your App Library, or add a new app" width={520} footer={footer}>
-      <div className="border-t border-soft px-6 pt-[18px]">
-        <ToggleGroup type="single" value={mode} onValueChange={(v) => v && setMode(v as typeof mode)} className="flex w-full rounded-[8px] bg-[#f5f5f5] p-0.5">
-          <ToggleGroupItem value="library" className={seg}>From library</ToggleGroupItem>
-          <ToggleGroupItem value="upload" className={seg}>Upload .ipa</ToggleGroupItem>
-          <ToggleGroupItem value="manifest" className={seg}>Manifest URL</ToggleGroupItem>
-        </ToggleGroup>
+      <div className="border-t border-soft px-6 pt-2">
+        <Tabs value={mode} onValueChange={(v) => setMode(v as typeof mode)} className="gap-0">
+          <TabsList className={tabListClass}>
+            <TabsTrigger value="library" className={tabTriggerClass}>From library</TabsTrigger>
+            <TabsTrigger value="upload" className={tabTriggerClass}>Upload .ipa</TabsTrigger>
+            <TabsTrigger value="manifest" className={tabTriggerClass}>Manifest URL</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         {mode === 'library' && (
           <>
@@ -152,32 +154,25 @@ export function AddInhouseDrawer({
 
         {mode === 'upload' && (
           <>
-            <div className="mt-[18px] flex flex-col items-center rounded-[6px] border-2 border-dashed border-[#90caf9] bg-[#f5faff] px-4 py-7 text-center">
-              <Upload className="size-6 text-uem" strokeWidth={1.7} />
-              <p className="mt-3 mb-0 text-[15px]">
-                Drop an .ipa file here, or <a href="#" className="text-uem underline">browse</a>
-              </p>
-              <p className="mt-2 mb-0 text-[12px] text-muted">Up to 4 GB. Signed for in-house distribution.</p>
+            <label className="mt-[18px] flex min-h-[160px] w-full cursor-pointer flex-col items-center justify-center gap-2.5 rounded-[12px] border-[1.5px] border-dashed border-dash px-6 py-6 text-center hover:bg-[#fafafa]">
+              <input type="file" accept=".ipa" className="sr-only" />
+              <Upload className="size-8 text-uem" strokeWidth={1.5} />
+              <span className="text-[15px] font-semibold text-heading">Drop an .ipa file here, or <span className="text-uem underline">browse</span></span>
+              <span className="text-[12px] text-muted">Up to 4 GB. Signed for in-house distribution.</span>
+            </label>
+            <div className="mt-4 rounded-[8px] border border-line px-4 py-3 text-[13px] leading-5">
+              <p className="m-0 font-semibold text-heading">Read from AcmeExpense.ipa</p>
+              <p className="mt-1 mb-0 text-muted">com.acme.expense · version 2.0.3 · iOS 16.0 and later</p>
+              <p className="mt-1.5 mb-0"><SigningBadge expires="2026-11-12" /></p>
             </div>
-            <div className="mt-4 rounded-[6px] border border-line px-4 py-3 text-[13px]">
-              <p className="m-0 font-semibold">Read from AcmeExpense.ipa</p>
-              <p className="mt-1.5 mb-0">com.acme.expense · version 2.0.3 · iOS 16.0 and later</p>
-              <p className="mt-1.5 mb-0 text-[#c2410c]">Signing profile expires 12 Nov 2026</p>
-            </div>
-            <div className="relative mt-5">
-              <label className="absolute -top-2 left-2.5 bg-white px-1 text-[12px] text-muted">App name in the library</label>
-              <Input defaultValue="Acme Expense" className="h-[42px] rounded-[6px] border-line bg-white text-[15px]" />
-            </div>
+            <Field className="mt-5" label="App name in the library" defaultValue="Acme Expense" />
             <p className="mt-2.5 text-[12px] text-muted">The app is saved to the App Library and added to this profile.</p>
           </>
         )}
 
         {mode === 'manifest' && (
           <>
-            <div className="relative mt-5">
-              <label className="absolute -top-2 left-2.5 bg-white px-1 text-[12px] text-muted">Manifest URL</label>
-              <Input placeholder="https://apps.acme.com/expense/manifest.plist" className="h-[42px] rounded-[6px] border-line bg-white text-[15px]" />
-            </div>
+            <Field className="mt-5" label="Manifest URL" required info="A public plist that points to the signed .ipa" placeholder="https://apps.acme.com/expense/manifest.plist" />
             <p className="mt-2.5 text-[12px] text-muted">We read the bundle ID and version from the manifest. The app is saved to the App Library and added to this profile.</p>
           </>
         )}
@@ -250,7 +245,7 @@ export function AppSettingsDrawer({ app, onOpenChange, onSave }: { app: CatalogA
                       <span className="w-14 font-semibold">{v}</span>
                       <span className={cn('rounded-[10px] px-2 py-px', s === 'Available' ? 'bg-[#e8f5e9] text-ok' : 'bg-[#f5f5f5] text-muted')}>{s}</span>
                       <span className="grow text-muted">{s === 'Available' ? <span className="inline-flex items-center gap-2">Devices get this build · <SigningBadge expires={app.signingExpires} /></span> : 'Restore to roll devices back to this build'}</span>
-                      <UButton tone="neutral" size="sm" className="h-[30px]" onClick={() => toggleBuild(v, s)}>
+                      <UButton tone="outline" size="sm" onClick={() => toggleBuild(v, s)}>
                         {s === 'Available' ? 'Retire' : 'Restore'}
                       </UButton>
                     </div>
@@ -262,9 +257,8 @@ export function AppSettingsDrawer({ app, onOpenChange, onSave }: { app: CatalogA
                 <LastBuildDialog open={!!lastBuild} appName={app.name} version={lastBuild ?? ''} onClose={() => setLastBuild(null)} />
               </div>
             ) : (
-              <div className="mt-4 flex gap-2 rounded-[4px] bg-[#e3f2fd] px-3.5 py-2.5 text-[13px] text-[#1565c0]">
-                <Info className="mt-0.5 size-4 shrink-0" strokeWidth={1.7} />
-                United States listing, version 24.10.10. The App Store always installs its latest version. Without VPP the user is asked for an Apple ID.
+              <div className="mt-4">
+                <InfoAlert>United States listing, version 24.10.10. The App Store always installs its latest version. Without VPP the user is asked for an Apple ID.</InfoAlert>
               </div>
             )}
           </div>
@@ -280,12 +274,14 @@ export function AppSettingsDrawer({ app, onOpenChange, onSave }: { app: CatalogA
               ))}
             </TabsContent>
             <TabsContent value="domains" className="px-6 pt-4 text-[14px] text-muted">
-              Associated domains let the app open links and use credentials for these domains.
-              <Input placeholder="Add domain, e.g. acme.com" className="mt-3 h-10 rounded-[6px] border-line bg-white" />
+              <Field label="Associated domains" info="Lets the app open links and share credentials for these domains" placeholder="acme.com" />
             </TabsContent>
             <TabsContent value="config" className="px-6 pt-4 text-[14px] text-muted">
-              Managed app configuration is sent to the app as key-value pairs.
-              <textarea placeholder="<dict>…</dict>" className="mt-3 h-40 w-full rounded-[6px] border border-line p-3 font-mono text-[13px]" />
+              <div className="flex flex-col gap-2">
+                <span className="text-[14px] font-semibold text-heading">Managed app configuration</span>
+                <textarea placeholder="<dict>…</dict>" className="h-40 w-full rounded-[6px] border border-line p-2.5 font-mono text-[13px] text-ink placeholder:text-placeholder focus-visible:border-uem focus-visible:outline-none" />
+                <span className="text-[12px] text-muted">Sent to the app as key-value pairs at install.</span>
+              </div>
             </TabsContent>
           </Tabs>
         </>

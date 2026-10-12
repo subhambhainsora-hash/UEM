@@ -14,12 +14,13 @@ import { cn } from './ui/utils';
 import type { Source } from '../data';
 
 /* Buttons ---------------------------------------------------------------- */
-type Tone = 'primary' | 'outline' | 'neutral' | 'danger' | 'disabled';
+type Tone = 'primary' | 'outline' | 'neutral' | 'link' | 'danger' | 'disabled';
 /* mO WEB Design System buttons: 40px, 5px radius, 15px semibold. */
 const tones: Record<Tone, string> = {
   primary: 'bg-uem text-white hover:bg-uem-hover active:bg-[#0747a6] border-0',
   outline: 'bg-white text-uem border-[1.5px] border-uem hover:bg-uem-soft',
   neutral: 'bg-white text-ink border border-line hover:bg-[#f3f3f5]',
+  link: 'bg-transparent text-uem border-0 hover:bg-uem-soft hover:text-uem px-2',
   danger: 'bg-bad text-white hover:bg-[#ff5630] border-0',
   disabled: 'bg-[rgba(9,30,66,0.04)] text-[#adadad] border-0',
 };
@@ -109,7 +110,7 @@ export function CountBadge({ n, active }: { n: number; active?: boolean }) {
 
 export function LaterBadge() {
   return (
-    <span className="rounded-[3px] border border-later px-1.5 py-px text-[10px] font-semibold text-later">LATER</span>
+    <span className="rounded-[8px] bg-chip px-2 py-px font-['Inter'] text-[11px] font-medium text-[#262626]">Later</span>
   );
 }
 

@@ -1,9 +1,10 @@
-import { CalendarCheck, Plus, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { Plus, SlidersHorizontal, Trash2 } from 'lucide-react';
+import emptyGlobe from '../assets/ds/empty-globe.svg';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 import { AppIcon, Chip, CountBadge, LaterBadge, SigningBadge, UButton } from '../components/uem';
 import { cn } from '../components/ui/utils';
 import { signingState, type CatalogApp } from '../data';
-import { ProfileFields, SectionTitle, tabListClass, tabTriggerClass } from '../components/ds';
+import { EmptyState, ProfileFields, SectionTitle, tabListClass, tabTriggerClass } from '../components/ds';
 
 export type SourceTab = 'store' | 'enterprise' | 'vpp';
 
@@ -26,7 +27,7 @@ function AppRow({ app, onConfigure, onRemove, flag }: { app: CatalogApp; onConfi
           <Chip key={c}>{c}</Chip>
         ))}
       </span>
-      <UButton tone="neutral" onClick={onConfigure} className="shrink-0">
+      <UButton tone="link" onClick={onConfigure} className="shrink-0">
         <SlidersHorizontal strokeWidth={1.7} />
         Configure
       </UButton>
@@ -92,15 +93,13 @@ export function AppCatalogSection({
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h3 className="m-0 text-[18px] font-semibold text-heading">App Store apps</h3>
           <div className="flex items-center gap-3">
-            <div className="relative w-[200px]">
-              <label htmlFor="country" className="absolute -top-2 left-2.5 bg-white px-1 text-[12px] text-muted">
-                App Store country
-              </label>
+            <div className="flex items-center gap-2.5">
+              <label htmlFor="country" className="text-[14px] font-semibold text-heading">App Store country</label>
               <select
                 id="country"
                 value={country}
                 onChange={(e) => onCountry(e.target.value)}
-                className="h-10 w-[200px] rounded-[6px] border border-line bg-white px-3 text-[14px] text-ink"
+                className="h-10 w-[180px] rounded-[6px] border border-line bg-white px-2.5 text-[14px] text-ink"
               >
                 <option>United States</option>
                 <option>India</option>
@@ -144,17 +143,13 @@ export function AppCatalogSection({
       </TabsContent>
 
       <TabsContent value="vpp">
-        <div className="flex flex-col items-center pt-14 text-center">
-          <span className="flex size-[72px] items-center justify-center rounded-full bg-[#f3eefc] text-later">
-            <CalendarCheck className="size-6" strokeWidth={1.7} />
-          </span>
-          <h3 className="mt-4 mb-0 text-[18px] font-semibold text-heading">VPP apps come with Apps and Books</h3>
-          <p className="mt-3 mb-0 max-w-[440px] text-[14px] text-muted">
-            Connect an Apps and Books location token to assign licences and install App Store apps silently, with no Apple ID prompt.
-          </p>
-          <UButton tone="disabled" size="lg" disabled className="mt-4 disabled:bg-[#e0e0e0] disabled:text-[#757575]">
-            Add VPP apps
-          </UButton>
+        <div className="pt-5">
+          <EmptyState
+            icon={emptyGlobe}
+            title="VPP apps come with Apps and Books"
+            sub="Connect an Apps and Books location token to assign licences and install App Store apps silently, with no Apple ID prompt."
+            action={<UButton tone="outline" size="lg" disabled className="mt-2">Connect Apps and Books · coming later</UButton>}
+          />
         </div>
       </TabsContent>
     </Tabs>

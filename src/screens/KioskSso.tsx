@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { AlertTriangle, ChevronDown, ChevronUp, Copy, Globe, Info, Plus, X } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronUp, Copy, Globe, Plus, X } from 'lucide-react';
 import { AddRow, EmptyState, Field, FieldLabel, InfoAlert, InfoCard, ProfileFields, RadioCard, SectionHeader, SectionTitle } from '../components/ds';
 import tileMail from '../assets/ds/tile-mail.svg';
 import tilePuzzle from '../assets/ds/tile-puzzle.svg';
@@ -60,7 +60,7 @@ export function KioskSection({
   const [shortcuts, setShortcuts] = React.useState(['Intranet', 'Help desk']);
   const docked = Object.values(home).filter((h) => h.dock).length;
   const current = catalog.find((a) => a.id === singleApp);
-  const seg = 'h-10 rounded-none border border-line px-4 text-[14px] text-ink first:rounded-l-[5px] last:rounded-r-[5px] data-[state=on]:border-uem data-[state=on]:bg-uem-soft data-[state=on]:text-uem';
+  const seg = 'h-10 rounded-none border border-line bg-white px-4 text-[14px] text-ink hover:bg-[#f3f3f5] hover:text-ink first:rounded-l-[5px] last:rounded-r-[5px] data-[state=on]:border-uem data-[state=on]:bg-uem-soft data-[state=on]:text-uem data-[state=on]:hover:bg-uem-soft data-[state=on]:hover:text-uem';
 
   return (
     <div className="flex flex-col gap-5">
@@ -69,9 +69,8 @@ export function KioskSection({
       <InfoAlert>Requires a company-owned, supervised iOS device.</InfoAlert>
       <div>
       <div className="flex items-center gap-2 border-b border-row py-3">
-        <span className="text-[16px] text-heading">Kiosk Mode</span>
-        <Info className="size-4 text-muted" strokeWidth={1.7} />
-        <span className="rounded-[10px] bg-[#f5f5f5] px-2 text-[11px] text-muted"> iOS 6 +</span>
+        <FieldLabel info="Single App locks the device to one app. Multi App shows a curated home screen.">Kiosk Mode</FieldLabel>
+        <span className="rounded-[8px] bg-chip px-2 py-px font-['Inter'] text-[11px] font-medium text-[#262626]">iOS 6+</span>
         <ToggleGroup type="single" value={mode} onValueChange={(v) => v && onMode(v as KioskMode)} className="ml-auto gap-0 rounded-none">
           <ToggleGroupItem value="none" className={seg}>No Kiosk</ToggleGroupItem>
           <ToggleGroupItem value="single" className={seg}>Single App</ToggleGroupItem>
@@ -89,13 +88,12 @@ export function KioskSection({
         <>
           <div className="flex items-start gap-6 border-b border-row py-3.5">
             <div className="grow">
-              <span className="text-[16px] text-heading">Application <span className="text-bad">*</span></span>
-              <Info className="ml-2 inline size-4 text-muted" strokeWidth={1.7} />
+              <FieldLabel required info="Devices open this app and nothing else">Application</FieldLabel>
               <p className="mt-1 mb-0 text-[13px] text-muted">Pick one app from this profile's App Catalog</p>
             </div>
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
-                <button type="button" aria-invalid={!current || undefined} className={cn('flex h-11 w-[380px] items-center gap-3 rounded-[6px] border bg-white px-3 text-[14px]', open ? 'border-uem' : error && !current ? 'border-bad' : 'border-line')}>
+                <button type="button" aria-invalid={!current || undefined} className={cn('flex h-11 w-[380px] items-center gap-3 rounded-[6px] border bg-white px-3 text-[14px] outline-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#4c9aff]', open ? 'border-uem' : error && !current ? 'border-bad' : 'border-line')}>
                   {current ? (
                     <>
                       <AppIcon logo={current.logo} name={current.name} color={current.color} size={26} />
@@ -132,7 +130,7 @@ export function KioskSection({
       {mode === 'multi' && (
         <>
           <div className="flex items-center border-b border-row py-2.5">
-            <span className="grow text-[16px] text-heading">Web Shortcuts</span>
+            <span className="grow"><FieldLabel info="Web clips pinned to the kiosk home screen">Web Shortcuts</FieldLabel></span>
             <div className="flex h-11 w-[380px] items-center gap-1.5 rounded-[6px] border border-line px-2">
               {shortcuts.map((s) => (
                 <Pill key={s} onRemove={() => { setShortcuts((x) => x.filter((y) => y !== s)); onChange?.(); }}>{s}</Pill>
@@ -140,9 +138,9 @@ export function KioskSection({
             </div>
           </div>
           <div className="mt-3 flex items-center gap-2">
-            <span className="text-[16px] text-heading">Home screen apps <span className="text-bad">*</span></span>
+            <FieldLabel required>Home screen apps</FieldLabel>
             <span className="text-[13px] text-muted">from this profile's App Catalog</span>
-            <span className={cn('ml-auto rounded-[10px] px-2.5 py-0.5 text-[13px]', docked > 4 ? 'bg-[#fdecea] text-bad' : 'bg-uem-soft text-uem')}>
+            <span className={cn('ml-auto rounded-[8px] px-2.5 py-0.5 font-[\'Inter\'] text-[12px] font-medium', docked > 4 ? 'bg-[#fdecea] text-bad' : 'bg-uem-soft text-uem')}>
               Dock: {docked} of 4 used
             </span>
           </div>
