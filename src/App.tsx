@@ -27,6 +27,9 @@ const screens: { id: string; label: string; state?: ProfileState; library?: bool
   { id: 'k2', label: 'Kiosk · Multi App', state: { section: 'Kiosk', kiosk: 'multi' } },
   { id: 'k3', label: 'Extensible SSO', state: { section: 'Extensible SSO' } },
   { id: 'k4', label: 'Remove an app Kiosk or SSO uses', state: { tab: 'enterprise', dialog: 'remove' } },
+  { id: 'p1', label: 'Email configuration', state: { section: 'Email' } },
+  { id: 'p2', label: 'Web Shortcuts', state: { section: 'Web Shortcuts' } },
+  { id: 'p3', label: 'Web Content Filter', state: { section: 'Web Content Filter' } },
 ];
 
 /* Profiles list · the page the sidebar's "Profiles" item opens --------------- */
