@@ -1,95 +1,107 @@
 import * as React from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, Mail, MonitorSmartphone, Rocket, ShieldCheck, Users } from 'lucide-react';
+import { Apple, Bot, ChevronRight, ChevronUp, Cloud, FileSearch, Filter, Globe, Mail, Monitor, MonitorSmartphone, PanelLeftClose, UserCheck, Users } from 'lucide-react';
 import { cn } from './ui/utils';
 import moLogo from '../assets/ds/mo-logo.svg';
-import icDashboard from '../assets/ds/sb-dashboard.svg';
-import icClassify from '../assets/ds/sb-classify.svg';
-import icDomains from '../assets/ds/sb-domains.svg';
-import icUp from '../assets/ds/sb-up.svg';
-import icDown from '../assets/ds/sb-down.svg';
 import icOrg from '../assets/ds/org-building.svg';
 import icChevron from '../assets/ds/chevron-down.svg';
 
 type Page = 'profiles' | 'library';
 
-/* Sidebar · mO WEB Design System ------------------------------------------ */
-function NavItem({ icon, lucide: Lucide, label, open, onClick, level = 0, active, to }: {
-  icon?: string; lucide?: React.ElementType; label: string; open?: boolean; onClick?: () => void; level?: 0 | 1 | 2; active?: boolean; to?: string;
+/* Sidebar · Endpoint Defence navigation (from the iOS Profile App Catalog PDF) ---- */
+function Group({ label, open, onToggle }: { label: string; open: boolean; onToggle: () => void }) {
+  return (
+    <button type="button" aria-expanded={open} onClick={onToggle} className="flex h-11 w-full items-center justify-between border-0 bg-transparent pr-4 pl-3 text-left text-[15px] font-semibold whitespace-nowrap text-ink">
+      {label}
+      <ChevronUp className={cn('size-[18px] transition-transform', !open && 'rotate-180')} strokeWidth={1.7} />
+    </button>
+  );
+}
+
+function Item({ icon: Icon, label, more, active, open, onClick }: {
+  icon: React.ElementType; label: string; more?: boolean; active?: boolean; open?: boolean; onClick?: () => void;
 }) {
-  const cls = cn(
-    'flex w-full items-center gap-2 rounded-[8px] px-3 text-left text-[14px] leading-5 tracking-[0.005em] text-ink no-underline hover:bg-[#f3f3f5]',
-    level === 0 ? 'py-2' : 'py-1',
-    active && 'rounded-[4px] bg-nav-bg hover:bg-nav-bg',
-  );
-  const body = (
-    <>
-      {icon && <img src={icon} alt="" width={17} height={17} className="size-[16.67px] shrink-0" />}
-      {Lucide && <Lucide className="size-[16.67px] shrink-0" strokeWidth={1.7} />}
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-expanded={open}
+      aria-current={active ? 'true' : undefined}
+      className={cn(
+        'flex h-11 w-full items-center gap-3.5 border-0 bg-transparent pr-[22px] pl-3 text-left text-[15px] no-underline',
+        active ? 'h-[46px] border-e-[5px] border-uem bg-nav-bg pr-[17px] text-uem' : 'text-ink hover:bg-[#f3f3f5]',
+      )}
+    >
+      <Icon className="size-5 shrink-0" strokeWidth={1.7} />
       <span className="grow">{label}</span>
-      {open !== undefined && <img src={open ? icUp : icDown} alt="" width={20} height={20} className="size-5" />}
-    </>
+      {more && <ChevronRight className="size-[18px]" strokeWidth={1.7} />}
+      {open !== undefined && <ChevronUp className={cn('size-[18px] transition-transform', !open && 'rotate-180')} strokeWidth={1.7} />}
+    </button>
   );
-  if (to) return <Link to={to} aria-current={active ? 'page' : undefined} className={cls}>{body}</Link>;
-  return <button type="button" onClick={onClick} aria-expanded={open} className={cn(cls, 'border-0 bg-transparent')}>{body}</button>;
+}
+
+function SubItem({ to, label, active }: { to: string; label: string; active: boolean }) {
+  return (
+    <Link
+      to={to}
+      aria-current={active ? 'page' : undefined}
+      className={cn(
+        'mx-6 my-[3px] flex h-10 items-center rounded-[10px] px-3 text-[15px] no-underline',
+        active ? 'bg-nav-bg text-uem' : 'text-ink hover:bg-[#f3f3f5]',
+      )}
+    >
+      {label}
+    </Link>
+  );
 }
 
 function Sidebar({ page }: { page: Page }) {
-  const [open, setOpen] = React.useState<Record<string, boolean>>({ devices: true, policy: true, windows: true, apple: true, classify: false });
+  const [open, setOpen] = React.useState<Record<string, boolean>>({ inventory: true, dlp: true, mdm: true, apple: true });
   const t = (k: string) => setOpen((o) => ({ ...o, [k]: !o[k] }));
   return (
-    <nav aria-label="Main" className="flex w-[242px] shrink-0 flex-col bg-white drop-shadow-[1px_4px_2px_rgba(0,0,0,0.1)]">
-      <div className="flex min-h-0 grow flex-col gap-5 overflow-y-auto py-5">
-        <div className="flex items-center px-5">
-          <div className="flex flex-col px-1">
-            <img src={moLogo} alt="miniOrange" width={123} height={24} className="h-6 w-[123px]" />
-            <span className="text-[11.9px] leading-4 font-extrabold tracking-[0.3px] text-[#5f6062]">MDM</span>
-          </div>
-        </div>
-        <div className="flex flex-col gap-2 px-2">
-          <NavItem icon={icDashboard} label="Dashboard" />
-          <NavItem lucide={Rocket} label="Getting started" />
-          <div className="flex flex-col gap-2">
-            <NavItem lucide={MonitorSmartphone} label="Manage devices" open={open.devices} onClick={() => t('devices')} />
-            {open.devices && (
-              <div className="flex flex-col gap-1.5 pl-7">
-                <NavItem label="Device" level={1} />
-                <NavItem label="Device Groups" level={1} />
-              </div>
-            )}
-          </div>
-          <div className="flex flex-col gap-2">
-            <NavItem lucide={MonitorSmartphone} label="Devices policy" open={open.policy} onClick={() => t('policy')} />
-            {open.policy && (
-              <div className="flex flex-col gap-1.5 pl-[26px]">
-                <NavItem label="Windows" level={1} open={open.windows} onClick={() => t('windows')} />
-                {open.windows && (
-                  <div className="flex flex-col gap-1.5 pl-5">
-                    <NavItem label="Desktop apps" level={2} /><NavItem label="USB" level={2} /><NavItem label="Printer" level={2} /><NavItem label="Ethernet" level={2} />
-                  </div>
-                )}
-                <NavItem label="Android" level={1} />
-                <NavItem label="Apple" level={1} open={open.apple} onClick={() => t('apple')} />
-                {open.apple && (
-                  <div className="flex flex-col gap-1.5 pl-5">
-                    <NavItem label="Profiles" level={2} to="/d1" active={page === 'profiles' || page === 'library'} />
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          <NavItem lucide={Users} label="Manage User" />
-          <NavItem lucide={Mail} label="Email policy" />
-          <NavItem lucide={Bell} label="Notification" />
-          <NavItem icon={icClassify} label="Data Classification" open={open.classify} onClick={() => t('classify')} />
-          <NavItem lucide={ShieldCheck} label="Approval requests" />
-          <NavItem icon={icDomains} label="Organizational domains" />
-        </div>
+    <nav aria-label="Main" className="relative flex w-[266px] shrink-0 flex-col overflow-hidden border-e border-soft bg-white">
+      <div className="flex shrink-0 flex-col border-b border-soft px-5 pt-4 pb-3">
+        <img src={moLogo} alt="miniOrange" width={123} height={24} className="h-6 w-[123px]" />
+        <span className="mt-[3px] pl-0.5 text-[11.9px] leading-4 font-extrabold tracking-[0.3px] text-[#5f6062]">Endpoint Defence</span>
       </div>
-      <div className="flex shrink-0 items-center border-t border-[#eaeaea] bg-[#f9f9f9] px-5 py-3">
-        <a href="https://www.miniorange.com" target="_blank" rel="noreferrer" className="py-1 pl-2.5 text-[11px] leading-[17px] text-[#636363] no-underline">
-          Powered by <span className="text-brand">miniOrange</span>
-        </a>
+      <div className="min-h-0 grow overflow-y-auto pt-2.5 pb-14">
+        <Group label="Device Inventory" open={open.inventory} onToggle={() => t('inventory')} />
+        {open.inventory && (
+          <>
+            <Item icon={MonitorSmartphone} label="Devices" />
+            <Item icon={Users} label="Device Groups" />
+            <Item icon={UserCheck} label="Onboarding Requests" />
+          </>
+        )}
+        <Group label="Data Loss Prevention" open={open.dlp} onToggle={() => t('dlp')} />
+        {open.dlp && (
+          <>
+            <Item icon={Monitor} label="Endpoint" more />
+            <Item icon={Mail} label="Email" more />
+            <Item icon={Cloud} label="Cloud" more />
+            <Item icon={FileSearch} label="Data Discovery" more />
+            <Item icon={Filter} label="Content Filtering" more />
+            <Item icon={Globe} label="Secure Web Gateway" more />
+          </>
+        )}
+        <Group label="Mobile Device Management" open={open.mdm} onToggle={() => t('mdm')} />
+        {open.mdm && (
+          <>
+            <Item icon={Bot} label="Android" more />
+            <Item icon={Apple} label="Apple" active open={open.apple} onClick={() => t('apple')} />
+            {open.apple && (
+              <>
+                <SubItem to="/d1" label="Profiles" active={page === 'profiles'} />
+                <SubItem to="/l1" label="App Groups" active={page === 'library'} />
+              </>
+            )}
+          </>
+        )}
+      </div>
+      <div className="absolute bottom-0 left-0 flex h-14 w-full items-center justify-center border-t border-soft bg-white">
+        <button type="button" aria-label="Collapse sidebar" className="flex size-9 items-center justify-center rounded-[6px] border-0 bg-transparent text-ink hover:bg-[#f3f3f5]">
+          <PanelLeftClose className="size-5" strokeWidth={1.7} />
+        </button>
       </div>
     </nav>
   );
