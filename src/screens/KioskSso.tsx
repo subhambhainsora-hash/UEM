@@ -5,13 +5,12 @@ import tileMail from '../assets/ds/tile-mail.svg';
 import tilePuzzle from '../assets/ds/tile-puzzle.svg';
 import emptyGlobe from '../assets/ds/empty-globe.svg';
 import emptyPuzzle from '../assets/ds/empty-puzzle.svg';
-import { AllowAllSsoDialog } from './Dialogs';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { ToggleGroup, ToggleGroupItem } from '../components/ui/toggle-group';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import { AppIcon, SourceBadge, UCheckbox, USwitch } from '../components/uem';
+import { AppIcon, SourceBadge, UButton, UCheckbox, USwitch } from '../components/uem';
 import { cn } from '../components/ui/utils';
-import type { CatalogApp } from '../data';
+import { plural, type CatalogApp } from '../data';
 
 export type KioskMode = 'none' | 'single' | 'multi';
 
@@ -272,7 +271,15 @@ export function SsoSection({ catalog, allowed, onAllowed, all, onAll, onChange, 
             <button type="button" onClick={() => onAll(false)} className="ml-1.5 border-0 bg-transparent p-0 font-semibold text-[#7b341e] underline">Turn off</button>
           </InfoAlert>
         )}
-        <AllowAllSsoDialog open={confirmAll} appCount={catalog.length} onCancel={() => setConfirmAll(false)} onConfirm={() => { onAll(true); setConfirmAll(false); }} />
+        {confirmAll && !all && (
+          <div role="alert" className="flex flex-col gap-2 rounded-[6px] bg-[#fff3e0] px-3.5 py-3 text-[13px] text-[#7b341e]">
+            <span className="flex items-start gap-2"><AlertTriangle className="mt-0.5 size-4 shrink-0" strokeWidth={1.7} /><span><b className="font-semibold">Allow every app to use SSO?</b> This replaces the allow list. All {plural(catalog.length, 'app')} in this profile's App Catalog can use SSO, and so can any app added to the catalog later, without another review. Keep the list if any catalog app handles data that shouldn't be reachable with the corporate identity.</span></span>
+            <span className="flex flex-wrap gap-2">
+              <UButton size="sm" onClick={() => { onAll(true); setConfirmAll(false); }}>Allow every app</UButton>
+              <UButton tone="neutral" size="sm" autoFocus onClick={() => setConfirmAll(false)}>Keep the allow list</UButton>
+            </span>
+          </div>
+        )}
       </div>
 
       <AddRow label="Other bundle identifiers" info="For apps this profile doesn't install, such as Safari" placeholder="com.yourcompany.app" buttonLabel="Add bundle"

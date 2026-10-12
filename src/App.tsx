@@ -1,11 +1,12 @@
 import * as React from 'react';
-import { Link, Route, Routes, useLocation } from 'react-router-dom';
-import { LayoutGrid, Plus, Search, X } from 'lucide-react';
+import { Link, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { CheckCircle2, Copy as CopyIcon, Download, LayoutGrid, MoreVertical, PencilLine, Plus, Search, Send, Trash2, X } from 'lucide-react';
+import { ToastProvider, useToast } from './components/toast';
 import { ProfilePage, type ProfileState } from './screens/ProfilePage';
 import { AppLibraryPage } from './screens/AppLibrary';
 import { AppShell } from './components/AppShell';
-import { PageTitle } from './components/ds';
-import { UButton } from './components/uem';
+import { PageTitle, UndoRow } from './components/ds';
+import { IconButton, UButton, UMenu, UMenuItem, UMenuSeparator } from './components/uem';
 import { Input } from './components/ui/input';
 import { cn } from './components/ui/utils';
 import { profile, plural } from './data';
@@ -33,14 +34,62 @@ const screens: { id: string; label: string; state?: ProfileState; library?: bool
 ];
 
 /* Profiles list · the page the sidebar's "Profiles" item opens --------------- */
-const profiles = [
-  { name: profile.name, platform: 'iOS', devices: profile.deviceCount, apps: 5, updated: '12 Oct 2026', by: 'Abhijeet T.', status: 'Published' },
-  { name: 'Warehouse Kiosk', platform: 'iOS', devices: 36, apps: 2, updated: '3 Oct 2026', by: 'Vedika S.', status: 'Published' },
-  { name: 'Exec iPads', platform: 'iPadOS', devices: 12, apps: 7, updated: '28 Sep 2026', by: 'Abhijeet T.', status: 'Draft' },
+interface ProfileRow { id: string; name: string; platform: 'iOS' | 'iPadOS'; devices: number; apps: number; updated: string; by: string; status: 'Published' | 'Draft' }
+const seedProfiles: ProfileRow[] = [
+  { id: 'sales', name: profile.name, platform: 'iOS', devices: profile.deviceCount, apps: 5, updated: '12 Oct 2026', by: 'Abhijeet T.', status: 'Published' },
+  { id: 'kiosk', name: 'Warehouse Kiosk', platform: 'iOS', devices: 36, apps: 2, updated: '3 Oct 2026', by: 'Vedika S.', status: 'Published' },
+  { id: 'exec', name: 'Exec iPads', platform: 'iPadOS', devices: 12, apps: 7, updated: '28 Sep 2026', by: 'Abhijeet T.', status: 'Draft' },
 ];
 
+function StatusChip({ status }: { status: ProfileRow['status'] }) {
+  return status === 'Published' ? (
+    <span className="inline-flex items-center gap-1 rounded-[8px] bg-[#e3fcef] px-2.5 py-0.5 text-[12px] font-medium text-[#006644]"><CheckCircle2 className="size-3.5" strokeWidth={2} />Published</span>
+  ) : (
+    <span className="inline-flex items-center gap-1 rounded-[8px] bg-chip px-2.5 py-0.5 text-[12px] font-medium text-[#262626]"><PencilLine className="size-3.5" strokeWidth={1.7} />Draft</span>
+  );
+}
+
 function ProfilesPage() {
+  const toast = useToast();
+  const navigate = useNavigate();
+  const [rows, setRows] = React.useState<ProfileRow[]>(seedProfiles);
+  const [q, setQ] = React.useState('');
+  /* One inline confirm at a time, under the row that owns the action. */
+  const [confirm, setConfirm] = React.useState<{ id: string; kind: 'publish' | 'delete' } | null>(null);
+  const [undo, setUndo] = React.useState<{ row: ProfileRow; index: number } | null>(null);
+  const searchRef = React.useRef<HTMLInputElement>(null);
+  const shown = rows.filter((p) => (p.name + ' ' + p.platform + ' ' + p.status).toLowerCase().includes(q.trim().toLowerCase()));
   const th = 'px-4 py-3 text-left text-[14px] font-semibold text-heading';
+
+  const duplicate = (p: ProfileRow) => {
+    const copy: ProfileRow = { ...p, id: `${p.id}-${Date.now()}`, name: `${p.name} copy`, devices: 0, status: 'Draft', updated: '12 Oct 2026', by: 'Abhijeet T.' };
+    setRows((r) => [copy, ...r]);
+    toast({ title: `${copy.name} created as a draft`, sub: 'Same apps and settings, no devices assigned yet.', action: { label: 'Open it', onClick: () => navigate('/d1') } });
+  };
+  const publish = (p: ProfileRow) => {
+    setRows((r) => r.map((x) => (x.id === p.id ? { ...x, status: 'Published', updated: '12 Oct 2026', by: 'Abhijeet T.' } : x)));
+    setConfirm(null);
+    toast({ title: `${p.name} published`, sub: p.devices ? `${plural(p.devices, 'device')} receive it at next check-in.` : 'Assign a device group to roll it out.' });
+  };
+  const remove = (p: ProfileRow) => {
+    setUndo({ row: p, index: rows.findIndex((x) => x.id === p.id) });
+    setRows((r) => r.filter((x) => x.id !== p.id));
+    setConfirm(null);
+  };
+  const undoRemove = () => {
+    if (!undo) return;
+    setRows((r) => { const l = [...r]; l.splice(Math.min(undo.index, l.length), 0, undo.row); return l; });
+    setUndo(null);
+  };
+  /* The profile as a document an auditor can read. */
+  const exportProfile = (p: ProfileRow) => {
+    const lines = [p.name, `Exported ${new Date().toLocaleString()}`, '', `Platform: ${p.platform}`, `Status: ${p.status}`, `Devices: ${p.devices}`, `Apps: ${p.apps}`, `Last updated: ${p.updated} by ${p.by}`, '', 'Sections: App Catalog, Kiosk, Extensible SSO, Email, Web Shortcuts, Web Content Filter'];
+    const url = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' }));
+    const a = document.createElement('a'); a.href = url; a.download = `${p.name.replace(/\s+/g, '-').toLowerCase()}-profile.txt`; document.body.appendChild(a); a.click();
+    window.setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+    toast({ title: `${p.name} exported`, sub: 'A text summary for audits and reviews.', tone: 'info' });
+  };
+
   return (
     <AppShell page="profiles">
       <div className="flex min-h-0 grow flex-col overflow-y-auto px-[50px] pt-8 pb-6">
@@ -54,35 +103,82 @@ function ProfilesPage() {
           </UButton>
         </div>
         <div className="mt-6 flex items-center gap-3">
-          <label className="flex h-11 w-[340px] items-center gap-2.5 rounded-[6px] border border-line px-3">
+          <label className="flex h-11 w-[340px] items-center gap-2.5 rounded-[6px] border border-line px-3 focus-within:border-uem">
             <Search className="size-4 text-muted" strokeWidth={1.7} />
-            <Input placeholder="Search profiles" className="h-auto border-0 bg-transparent p-0 text-[14px] shadow-none focus-visible:ring-0" />
+            <Input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === 'Escape' && setQ('')} placeholder="Search profiles" aria-label="Search profiles" className="h-auto border-0 bg-transparent p-0 text-[14px] shadow-none focus-visible:ring-0" />
+            {q && <button type="button" aria-label="Clear search" onClick={() => { setQ(''); searchRef.current?.focus(); }} className="flex border-0 bg-transparent p-0 text-muted hover:text-ink"><X className="size-4" strokeWidth={1.7} /></button>}
           </label>
+          <span className="text-[13px] text-muted">{rows.filter((p) => p.status === 'Published').length} published · {rows.filter((p) => p.status === 'Draft').length} draft</span>
         </div>
         <div className="mt-4 overflow-hidden rounded-[6px] border border-line">
           <table className="w-full border-collapse">
             <thead className="bg-[#fafafa]">
               <tr>
-                <th className={th}>Profile</th><th className={th}>Platform</th><th className={th}>Devices</th><th className={th}>Apps</th><th className={th}>Status</th><th className={th}>Last updated</th>
+                <th className={th}>Profile</th><th className={th}>Platform</th><th className={th}>Devices</th><th className={th}>Apps</th><th className={th}>Status</th><th className={th}>Last updated</th><th className="w-12"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
             <tbody>
-              {profiles.map((p) => (
-                <tr key={p.name} className="border-t border-row text-[14px]">
-                  <td className="px-4 py-3"><Link to="/d1" className="font-semibold text-uem no-underline hover:underline">{p.name}</Link></td>
+              {shown.length === 0 && (
+                <tr><td colSpan={7} className="px-4 py-10 text-center text-[14px] text-muted">
+                  {q ? <>No profiles match “{q}”. <button type="button" onClick={() => setQ('')} className="border-0 bg-transparent p-0 font-semibold text-uem hover:underline">Clear search</button></> : 'No profiles yet. Create one to start managing Apple devices.'}
+                </td></tr>
+              )}
+              {shown.map((p) => (
+                <React.Fragment key={p.id}>
+                <tr className={cn('border-t border-row text-[14px] transition-colors', confirm?.id === p.id ? 'bg-[#fafafa]' : 'cursor-pointer hover:bg-[#fafafa]')} onClick={() => confirm?.id !== p.id && navigate('/d1')}>
+                  <td className="px-4 py-3"><Link to="/d1" onClick={(e) => e.stopPropagation()} className="font-semibold text-uem no-underline hover:underline">{p.name}</Link></td>
                   <td className="px-4">{p.platform}</td>
-                  <td className="px-4">{plural(p.devices, 'device')}</td>
+                  <td className="px-4">{p.devices ? plural(p.devices, 'device') : <span className="text-muted">None assigned</span>}</td>
                   <td className="px-4">{plural(p.apps, 'app')}</td>
-                  <td className="px-4">
-                    <span className={cn('rounded-[8px] px-2.5 py-0.5 text-[12px] font-medium', p.status === 'Published' ? 'bg-[#e3fcef] text-[#006644]' : 'bg-chip text-[#262626]')}>{p.status}</span>
-                  </td>
+                  <td className="px-4"><StatusChip status={p.status} /></td>
                   <td className="px-4 text-muted">{p.updated} · {p.by}</td>
+                  <td className="px-2" onClick={(e) => e.stopPropagation()}>
+                    <UMenu trigger={<IconButton label={`More actions for ${p.name}`}><MoreVertical className="size-4" strokeWidth={1.7} /></IconButton>}>
+                      <UMenuItem icon={PencilLine} onSelect={() => navigate('/d1')}>Open</UMenuItem>
+                      <UMenuItem icon={CopyIcon} onSelect={() => duplicate(p)}>Duplicate as draft</UMenuItem>
+                      {p.status === 'Draft' && <UMenuItem icon={Send} onSelect={() => setConfirm({ id: p.id, kind: 'publish' })}>Publish…</UMenuItem>}
+                      <UMenuItem icon={Download} onSelect={() => exportProfile(p)}>Export summary</UMenuItem>
+                      <UMenuSeparator />
+                      <UMenuItem icon={Trash2} danger onSelect={() => setConfirm({ id: p.id, kind: 'delete' })}>Delete…</UMenuItem>
+                    </UMenu>
+                  </td>
                 </tr>
+                {confirm?.id === p.id && (
+                  <tr className="bg-[#fafafa]">
+                    <td colSpan={7} className="px-4 pb-3">
+                      <div role="alert" className="flex flex-col gap-2 text-[13px] text-muted">
+                        {confirm.kind === 'delete' ? (
+                          <>
+                            <span className="min-w-0">
+                              Delete {p.name}? {p.status === 'Published' && p.devices ? <><b className="font-semibold text-[#7b341e]">{plural(p.devices, 'device')} have this profile</b>; at next check-in they remove its apps, restrictions and settings and stay enrolled.</> : 'It is a draft, so no device is affected.'} Its history goes with it.
+                            </span>
+                            <span className="flex flex-wrap gap-2">
+                              <UButton tone="danger" size="sm" onClick={() => remove(p)}><Trash2 strokeWidth={1.7} />{p.status === 'Published' && p.devices ? `Delete and remove from ${plural(p.devices, 'device')}` : 'Delete'}</UButton>
+                              <UButton tone="neutral" size="sm" autoFocus onClick={() => setConfirm(null)}>Cancel</UButton>
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="min-w-0">
+                              Publish {p.name}? {p.devices ? `${plural(p.devices, 'device')} in its device group receive it at next check-in, usually within 15 minutes. Recorded in the audit log.` : 'No device is assigned yet, so nothing is sent until you assign a device group.'}
+                            </span>
+                            <span className="flex flex-wrap gap-2">
+                              <UButton size="sm" onClick={() => publish(p)}><Send strokeWidth={1.7} />{p.devices ? `Publish to ${plural(p.devices, 'device')}` : 'Publish'}</UButton>
+                              <UButton tone="neutral" size="sm" autoFocus onClick={() => setConfirm(null)}>Keep as draft</UButton>
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>
         </div>
-        <p className="mt-3 text-[13px] text-muted">Showing {profiles.length} of {profiles.length} profiles</p>
+        {undo && <div className="mt-3"><UndoRow onUndo={undoRemove}>Deleted: <span className="text-ink">{undo.row.name}</span>.{undo.row.status === 'Published' && undo.row.devices ? ` ${plural(undo.row.devices, 'device')} remove its settings at next check-in unless you undo.` : ' No device was affected.'}</UndoRow></div>}
+        <p className="mt-3 text-[13px] text-muted" aria-live="polite">Showing {shown.length} of {rows.length} profiles</p>
       </div>
     </AppShell>
   );
@@ -126,6 +222,7 @@ function ScreenNav() {
 
 export default function App() {
   return (
+    <ToastProvider>
     <div className="h-screen">
       <Routes>
         <Route path="/" element={<ProfilesPage />} />
@@ -135,5 +232,6 @@ export default function App() {
       </Routes>
       <ScreenNav />
     </div>
+    </ToastProvider>
   );
 }

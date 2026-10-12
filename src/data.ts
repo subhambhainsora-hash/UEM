@@ -84,23 +84,41 @@ export interface LibraryApp {
   logo?: string;
   signingExpires?: string;
   /** Profiles that install this app, and the devices they cover. */
-  usedBy: { profiles: number; devices: number };
+  usedBy: { profiles: number; devices: number; in?: { name: string; devices: number }[] };
   builds: Build[];
 }
 
 export const libraryApps: LibraryApp[] = [
-  { id: 'crm', name: 'Acme CRM (Production)', bundleId: 'com.acme.crm', initials: 'AC', color: '#b45309', build: '3.4.1', delivery: 'Hosted .ipa', signingExpires: '2027-03-31', usedBy: { profiles: 2, devices: 312 },
+  { id: 'crm', name: 'Acme CRM (Production)', bundleId: 'com.acme.crm', initials: 'AC', color: '#b45309', build: '3.4.1', delivery: 'Hosted .ipa', signingExpires: '2027-03-31', usedBy: { profiles: 2, devices: 312, in: [{ name: 'Sales Baseline', devices: 148 }, { name: 'Warehouse Kiosk', devices: 164 }] },
     builds: [{ version: '3.4.1', status: 'Available', uploaded: '18 Sep 2026' }, { version: '3.4.0', status: 'Retired', uploaded: '2 Jul 2026' }, { version: '3.3.2', status: 'Retired', uploaded: '14 Apr 2026' }] },
   { id: 'crm-beta', name: 'Acme CRM (Beta)', bundleId: 'com.acme.crm', initials: 'AC', color: '#7b341e', build: '3.5.0', delivery: 'Hosted .ipa', signingExpires: '2027-03-31', usedBy: { profiles: 0, devices: 0 },
     builds: [{ version: '3.5.0', status: 'Available', uploaded: '1 Oct 2026' }] },
-  { id: 'survey', name: 'Acme Field Survey', bundleId: 'com.acme.survey', initials: 'FS', color: '#00695c', build: '1.8.0', delivery: 'Manifest URL', usedBy: { profiles: 1, devices: 148 },
+  { id: 'survey', name: 'Acme Field Survey', bundleId: 'com.acme.survey', initials: 'FS', color: '#00695c', build: '1.8.0', delivery: 'Manifest URL', usedBy: { profiles: 1, devices: 148, in: [{ name: 'Sales Baseline', devices: 148 }] },
     builds: [{ version: '1.8.0', status: 'Available', uploaded: '22 Aug 2026' }] },
   { id: 'expense', name: 'Acme Expense', bundleId: 'com.acme.expense', initials: 'AE', color: '#1565c0', build: '2.0.3', delivery: 'Hosted .ipa', signingExpires: '2026-11-12', usedBy: { profiles: 0, devices: 0 },
     builds: [{ version: '2.0.3', status: 'Available', uploaded: '9 Sep 2026' }] },
-  { id: 'inventory', name: 'Acme Inventory', bundleId: 'com.acme.inventory', initials: 'AI', color: '#4e342e', build: '1.2.0', delivery: 'Hosted .ipa', signingExpires: '2026-09-30', usedBy: { profiles: 1, devices: 36 },
+  { id: 'inventory', name: 'Acme Inventory', bundleId: 'com.acme.inventory', initials: 'AI', color: '#4e342e', build: '1.2.0', delivery: 'Hosted .ipa', signingExpires: '2026-09-30', usedBy: { profiles: 1, devices: 36, in: [{ name: 'Warehouse Kiosk', devices: 36 }] },
     builds: [{ version: '1.2.0', status: 'Available', uploaded: '3 Mar 2026' }] },
 ];
 
 export const allCatalog = [...appStoreApps, ...enterpriseApps];
 
 export const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+/** What we would read out of an uploaded .ipa or a manifest. The prototype derives it from the file name. */
+export interface ReadBuild { appName: string; bundleId: string; version: string; minIos: string; signingExpires: string }
+export function readIpa(fileName: string, bump?: string): ReadBuild {
+  const base = fileName.replace(/\.ipa$/i, '').replace(/[_-]+/g, ' ');
+  const m = base.match(/(\d+\.\d+(?:\.\d+)?)/);
+  const name = base.replace(/\s*\d+\.\d+(?:\.\d+)?\s*/g, '').replace(/([a-z])([A-Z])/g, '$1 $2').trim() || 'New app';
+  const version = bump ?? (m ? m[1] : '1.0.0');
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '').replace(/^acme/, '');
+  return { appName: name, bundleId: `com.acme.${slug || 'app'}`, version, minIos: '16.0', signingExpires: '2027-10-12' };
+}
+export function readManifest(url: string): ReadBuild {
+  const seg = url.replace(/\/manifest\.plist$/i, '').split('/').filter(Boolean).pop() ?? 'app';
+  const name = 'Acme ' + seg.charAt(0).toUpperCase() + seg.slice(1);
+  return { appName: name, bundleId: `com.acme.${seg.toLowerCase()}`, version: '1.0.0', minIos: '16.0', signingExpires: '2027-10-12' };
+}
+export const bumpPatch = (v: string) => v.replace(/(\d+)$/, (n) => String(Number(n) + 1));
+export const todayLabel = TODAY.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });

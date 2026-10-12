@@ -1,136 +1,240 @@
 import * as React from 'react';
-import { AlertTriangle, ChevronDown, ChevronRight, Link2, MoreVertical, Search, Upload } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { AlertTriangle, ChevronDown, ChevronRight, Copy, Link2, MoreVertical, Search, Trash2, Upload, X } from 'lucide-react';
 import { AppShell } from '../components/AppShell';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
+import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { Input } from '../components/ui/input';
-import { AppIcon, CountBadge, LaterBadge, SigningBadge, UButton } from '../components/uem';
+import { AppIcon, CountBadge, IconButton, LaterBadge, SigningBadge, UButton, UMenu, UMenuItem, UMenuSeparator } from '../components/uem';
 import { cn } from '../components/ui/utils';
-import { libraryApps, plural, signingState, type Build } from '../data';
-import { tabListClass, tabTriggerClass } from '../components/ds';
-import { LastBuildDialog, RetireDialog } from './Dialogs';
+import { libraryApps as seed, plural, signingState, todayLabel, type Build, type LibraryApp, type ReadBuild } from '../data';
+import { UndoRow, tabListClass, tabTriggerClass } from '../components/ds';
+import { useToast } from '../components/toast';
+import { AddInhouseDrawer } from './Drawers';
 
-/* L1 · App Library page (replaces App Groups) */
+type Filter = 'all' | 'attention';
+
+/* L1 · App Groups: the in-house app library */
 export function AppLibraryPage() {
+  const toast = useToast();
+  const [apps, setApps] = React.useState<LibraryApp[]>(seed);
   const [openRow, setOpenRow] = React.useState<string | null>('crm');
   const [q, setQ] = React.useState('');
-  const [builds, setBuilds] = React.useState<Record<string, Build[]>>(Object.fromEntries(libraryApps.map((a) => [a.id, a.builds])));
-  const [pending, setPending] = React.useState<{ app: string; version: string } | null>(null);
-  const [lastBuild, setLastBuild] = React.useState<{ app: string; version: string } | null>(null);
+  const [filter, setFilter] = React.useState<Filter>('all');
+  /* One inline confirm at a time: retiring a build, or removing an app. 'last' is the blocker for the only available build. */
+  const [confirm, setConfirm] = React.useState<{ app: string; kind: 'retire' | 'last' | 'remove'; version?: string } | null>(null);
+  const [drawer, setDrawer] = React.useState<{ mode: 'upload' | 'manifest'; forApp?: LibraryApp } | null>(null);
+  const [undo, setUndo] = React.useState<{ app: LibraryApp; index: number } | null>(null);
+  const searchRef = React.useRef<HTMLInputElement>(null);
 
-  const rows = libraryApps.filter((a) => (a.name + a.bundleId).toLowerCase().includes(q.toLowerCase()));
-  const expired = libraryApps.filter((a) => signingState(a.signingExpires).kind === 'expired');
-  const expiring = libraryApps.filter((a) => signingState(a.signingExpires).kind === 'expiring');
+  const needsAttention = (a: LibraryApp) => ['expired', 'expiring'].includes(signingState(a.signingExpires).kind);
+  const attention = apps.filter(needsAttention);
+  const expired = apps.filter((a) => signingState(a.signingExpires).kind === 'expired');
+  const expiring = apps.filter((a) => signingState(a.signingExpires).kind === 'expiring');
+  const rows = apps.filter((a) => (filter === 'all' || needsAttention(a)) && (a.name + a.bundleId).toLowerCase().includes(q.trim().toLowerCase()));
 
-  const askRetire = (appId: string, version: string) => {
-    const available = builds[appId].filter((b) => b.status === 'Available');
-    if (available.length <= 1) { setLastBuild({ app: appId, version }); return; }
-    setPending({ app: appId, version });
-  };
+  const patch = (id: string, fn: (a: LibraryApp) => LibraryApp) => setApps((x) => x.map((a) => (a.id === id ? fn(a) : a)));
   const setStatus = (appId: string, version: string, status: Build['status']) =>
-    setBuilds((b) => ({ ...b, [appId]: b[appId].map((x) => (x.version === version ? { ...x, status } : x)) }));
+    patch(appId, (a) => ({ ...a, builds: a.builds.map((b) => (b.version === version ? { ...b, status } : b)) }));
+  const askRetire = (a: LibraryApp, version: string) => {
+    if (a.builds.filter((b) => b.status === 'Available').length <= 1) { setConfirm({ app: a.id, kind: 'last', version }); return; }
+    setConfirm({ app: a.id, kind: 'retire', version });
+  };
+  const retire = (a: LibraryApp, version: string) => {
+    const fallback = a.builds.find((b) => b.status === 'Available' && b.version !== version)?.version ?? '';
+    setStatus(a.id, version, 'Retired'); setConfirm(null);
+    toast({ title: `${version} retired`, sub: a.usedBy.devices ? `${plural(a.usedBy.devices, 'device')} roll back to ${fallback} at next check-in.` : 'No device is affected.', action: { label: 'Undo', onClick: () => setStatus(a.id, version, 'Available') } });
+  };
+  const restore = (a: LibraryApp, version: string) => {
+    setStatus(a.id, version, 'Available');
+    toast({ title: `${version} restored`, sub: a.usedBy.devices ? `${plural(a.usedBy.devices, 'device')} in ${plural(a.usedBy.profiles, 'profile')} get it at next check-in.` : 'No profile uses this app, so no device changes.' });
+  };
+  const copyBundle = (a: LibraryApp) => { navigator.clipboard?.writeText(a.bundleId); toast({ title: 'Bundle ID copied', sub: a.bundleId, tone: 'info' }); };
+  const addBuild = (a: LibraryApp, b: ReadBuild) => {
+    patch(a.id, (x) => ({ ...x, build: b.version, signingExpires: b.signingExpires, builds: [{ version: b.version, status: 'Available', uploaded: todayLabel }, ...x.builds] }));
+    setOpenRow(a.id);
+    toast({ title: `${b.version} added to ${a.name}`, sub: a.usedBy.devices ? `${plural(a.usedBy.devices, 'device')} install it at next check-in.` : 'Add the app to a profile to install it.' });
+  };
+  const addApp = (b: ReadBuild, source: 'ipa' | 'manifest') => {
+    const id = b.bundleId.split('.').pop() + '-' + Date.now();
+    const app: LibraryApp = { id, name: b.appName, bundleId: b.bundleId, initials: b.appName.slice(0, 2).toUpperCase(), color: '#455a64', build: b.version, delivery: source === 'ipa' ? 'Hosted .ipa' : 'Manifest URL', signingExpires: b.signingExpires, usedBy: { profiles: 0, devices: 0 }, builds: [{ version: b.version, status: 'Available', uploaded: todayLabel }] };
+    setApps((x) => [app, ...x]); setOpenRow(id); setQ(''); setFilter('all');
+    toast({ title: `${b.appName} ${b.version} added to App Groups`, sub: 'Add it to devices from a profile’s App Catalog.', action: { label: 'Open Sales Baseline', onClick: () => { window.location.hash = '#/d4'; } } });
+  };
+  const removeApp = (a: LibraryApp) => {
+    setUndo({ app: a, index: apps.findIndex((y) => y.id === a.id) });
+    setApps((x) => x.filter((y) => y.id !== a.id)); setConfirm(null);
+  };
+  const undoRemove = () => {
+    if (!undo) return;
+    setApps((x) => { const l = [...x]; l.splice(Math.min(undo.index, l.length), 0, undo.app); return l; });
+    setUndo(null);
+  };
 
   const th = 'px-4 py-3 text-left text-[14px] font-semibold';
-  const pendingApp = libraryApps.find((a) => a.id === pending?.app);
-  const fallback = pending ? builds[pending.app].find((b) => b.status === 'Available' && b.version !== pending.version)?.version ?? '' : '';
+  const chip = (on: boolean) => cn('h-8 rounded-full border px-3 text-[13px] font-medium', on ? 'border-uem bg-uem-soft text-uem' : 'border-line bg-white text-ink hover:bg-[#f3f3f5]');
 
   return (
     <AppShell page="library">
       <div className="flex min-h-0 grow flex-col overflow-y-auto px-[50px] pt-8 pb-4">
-        <h1 className="m-0 text-[24px] leading-8 font-bold text-heading">Applications</h1>
+        <h1 className="m-0 text-[24px] leading-8 font-bold text-heading">App Groups</h1>
         <p className="mt-1.5 mb-0 text-[15px] text-muted">
           In-house apps your iOS profiles can install. Upload builds and roll back here; add apps to devices from a profile's App Catalog.
         </p>
-        {(expired.length > 0 || expiring.length > 0) && (
+        {attention.length > 0 && (
           <div role="status" className="mt-4 flex items-start gap-2.5 rounded-[4px] border border-[#f5d8b8] bg-[#fff3e0] px-3.5 py-2.5 text-[14px] text-[#7b341e]">
             <AlertTriangle className="mt-0.5 size-4 shrink-0" strokeWidth={1.7} />
-            <span>
+            <span className="grow">
               {expired.length > 0 && <><b className="font-semibold">{plural(expired.length, 'app')} can't install</b> because the signing profile has expired: {expired.map((a) => a.name).join(', ')}. Devices keep the installed copy, but new devices get nothing. </>}
               {expiring.length > 0 && <>{plural(expiring.length, 'app')} expires within 60 days: {expiring.map((a) => `${a.name} (${signingState(a.signingExpires).label})`).join(', ')}. Upload a re-signed build before then.</>}
             </span>
+            <button type="button" onClick={() => { setFilter('attention'); setQ(''); }} className="shrink-0 border-0 bg-transparent p-0 text-[13px] font-semibold text-[#7b341e] underline">Show {attention.length}</button>
           </div>
         )}
         <Tabs defaultValue="inhouse" className="mt-4 gap-0">
           <TabsList className={tabListClass}>
-            <TabsTrigger value="inhouse" className={tabTriggerClass}>In-house apps <CountBadge n={libraryApps.length} active /></TabsTrigger>
+            <TabsTrigger value="inhouse" className={tabTriggerClass}>In-house apps <CountBadge n={apps.length} active /></TabsTrigger>
             <TabsTrigger value="vpp" className={tabTriggerClass}>VPP licences <LaterBadge /></TabsTrigger>
           </TabsList>
           <TabsContent value="inhouse">
             <div className="mt-5 flex items-center gap-3">
-              <label className="flex h-10 w-[340px] items-center gap-2.5 rounded-[6px] border border-line px-3">
+              <label className="flex h-10 w-[340px] items-center gap-2.5 rounded-[6px] border border-line px-3 focus-within:border-uem">
                 <Search className="size-4 text-muted" strokeWidth={1.7} />
-                <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or bundle ID" className="h-auto border-0 bg-transparent p-0 text-[15px] shadow-none focus-visible:ring-0" />
+                <Input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === 'Escape' && setQ('')} placeholder="Search by name or bundle ID" aria-label="Search apps" className="h-auto border-0 bg-transparent p-0 text-[15px] shadow-none focus-visible:ring-0" />
+                {q && <button type="button" aria-label="Clear search" onClick={() => { setQ(''); searchRef.current?.focus(); }} className="flex border-0 bg-transparent p-0 text-muted hover:text-ink"><X className="size-4" strokeWidth={1.7} /></button>}
               </label>
+              {attention.length > 0 && (
+                <div role="group" aria-label="Filter" className="flex gap-1.5">
+                  <button type="button" aria-pressed={filter === 'all'} onClick={() => setFilter('all')} className={chip(filter === 'all')}>All · {apps.length}</button>
+                  <button type="button" aria-pressed={filter === 'attention'} onClick={() => setFilter('attention')} className={chip(filter === 'attention')}>Needs attention · {attention.length}</button>
+                </div>
+              )}
               <span className="grow" />
-              <UButton tone="outline" size="lg"><Link2 strokeWidth={1.7} />Add by manifest URL</UButton>
-              <UButton size="lg"><Upload strokeWidth={1.7} />Upload .ipa</UButton>
+              <UButton tone="outline" size="lg" onClick={() => setDrawer({ mode: 'manifest' })}><Link2 strokeWidth={1.7} />Add by manifest URL</UButton>
+              <UButton size="lg" onClick={() => setDrawer({ mode: 'upload' })}><Upload strokeWidth={1.7} />Upload .ipa</UButton>
             </div>
             <div className="mt-4 overflow-hidden rounded-[6px] border border-line">
               <table className="w-full border-collapse font-sans">
                 <thead className="bg-[#fafafa]">
                   <tr>
                     <th className={cn(th, 'pl-[56px]')}>App</th><th className={th}>Bundle ID</th><th className={th}>Latest build</th>
-                    <th className={th}>Delivery</th><th className={th}>Signing expires</th><th className={th}>Used by</th><th className="w-12" />
+                    <th className={th}>Delivery</th><th className={th}>Signing expires</th><th className={th}>Used by</th><th className="w-12"><span className="sr-only">Actions</span></th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.length === 0 && (
-                    <tr><td colSpan={7} className="px-4 py-10 text-center text-[14px] text-muted">No apps match "{q}". Check the bundle ID, or upload the app.</td></tr>
+                    <tr><td colSpan={7} className="px-4 py-10 text-center text-[14px] text-muted">
+                      {q ? <>No apps match “{q}”. <button type="button" onClick={() => setQ('')} className="border-0 bg-transparent p-0 font-semibold text-uem hover:underline">Clear search</button></> : filter === 'attention' ? 'Every signing profile is valid for more than 60 days.' : 'No in-house apps yet. Upload an .ipa or add one by manifest URL.'}
+                    </td></tr>
                   )}
                   {rows.map((a) => {
                     const open = openRow === a.id;
-                    const list = builds[a.id];
+                    const list = a.builds;
                     const latest = list.find((b) => b.status === 'Available')?.version ?? 'none';
+                    const used = a.usedBy.profiles > 0;
                     return (
                       <React.Fragment key={a.id}>
-                        <tr className={cn('border-t border-row text-[14px]', open && 'bg-[#f0f7ff]')}>
+                        <tr className={cn('border-t border-row text-[14px] transition-colors hover:bg-[#fafafa]', open && 'bg-[#f0f7ff] hover:bg-[#f0f7ff]')}>
                           <td className="px-4 py-3">
-                            <span className="flex items-center gap-3">
-                              <button type="button" aria-label={open ? 'Hide builds' : 'Show builds'} aria-expanded={open} onClick={() => setOpenRow(open ? null : a.id)} className="flex border-0 bg-transparent p-0 text-ink">
-                                {open ? <ChevronDown className="size-4 rotate-180" /> : <ChevronRight className="size-4" />}
-                              </button>
+                            <button type="button" aria-expanded={open} aria-controls={`builds-${a.id}`} onClick={() => setOpenRow(open ? null : a.id)} className="flex items-center gap-3 border-0 bg-transparent p-0 text-left text-ink">
+                              <span className="flex size-4 items-center justify-center">{open ? <ChevronDown className="size-4" strokeWidth={1.7} /> : <ChevronRight className="size-4" strokeWidth={1.7} />}</span>
                               <AppIcon logo={a.logo} name={a.name} color={a.color} size={32} />
                               <span className="text-[15px] font-semibold">{a.name}</span>
-                            </span>
+                            </button>
                           </td>
                           <td className="px-4 text-muted">{a.bundleId}</td>
                           <td className="px-4">{latest}</td>
                           <td className="px-4"><span className="rounded-[10px] bg-[#f5f5f5] px-2 py-0.5 text-[12px]">{a.delivery}</span></td>
                           <td className="px-4"><SigningBadge expires={a.signingExpires} /></td>
                           <td className="px-4">
-                            {a.usedBy.profiles ? (
-                              <a href="#" onClick={(e) => e.preventDefault()} className="text-uem underline">{plural(a.usedBy.profiles, 'profile')}</a>
+                            {used ? (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button type="button" className="border-0 bg-transparent p-0 text-[14px] text-uem underline hover:no-underline">{plural(a.usedBy.profiles, 'profile')}</button>
+                                </PopoverTrigger>
+                                <PopoverContent align="start" sideOffset={6} className="w-[280px] rounded-[8px] border-line p-1 font-sans shadow-[0_4px_8px_-2px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)]">
+                                  <p className="m-0 px-2.5 pt-1.5 pb-1 text-[12px] font-semibold tracking-wide text-muted uppercase">Installs {a.name}</p>
+                                  {(a.usedBy.in ?? []).map((p) => (
+                                    <Link key={p.name} to="/d4" className="flex items-center justify-between rounded-[6px] px-2.5 py-2 text-[14px] text-ink no-underline hover:bg-[#f3f3f5]">
+                                      <span className="font-medium">{p.name}</span><span className="text-[12px] text-muted">{plural(p.devices, 'device')}</span>
+                                    </Link>
+                                  ))}
+                                </PopoverContent>
+                              </Popover>
                             ) : <span className="text-muted">Not used</span>}
-                            {a.usedBy.profiles > 0 && <span className="ml-1.5 text-[12px] text-muted">· {plural(a.usedBy.devices, 'device')}</span>}
+                            {used && <span className="ml-1.5 text-[12px] text-muted">· {plural(a.usedBy.devices, 'device')}</span>}
                           </td>
-                          <td className="px-2"><button type="button" aria-label={`More actions for ${a.name}`} className="flex border-0 bg-transparent"><MoreVertical className="size-4" /></button></td>
+                          <td className="px-2">
+                            <UMenu trigger={<IconButton label={`More actions for ${a.name}`}><MoreVertical className="size-4" strokeWidth={1.7} /></IconButton>}>
+                              <UMenuItem icon={Upload} onSelect={() => setDrawer({ mode: 'upload', forApp: a })}>Add build</UMenuItem>
+                              <UMenuItem icon={Copy} onSelect={() => copyBundle(a)}>Copy bundle ID</UMenuItem>
+                              <UMenuSeparator />
+                              <UMenuItem icon={Trash2} danger disabled={used} hint={used ? `Remove it from ${plural(a.usedBy.profiles, 'profile')} first` : undefined} onSelect={() => { setOpenRow(a.id); setConfirm({ app: a.id, kind: 'remove' }); }}>Remove from App Groups</UMenuItem>
+                            </UMenu>
+                          </td>
                         </tr>
+                        {confirm?.app === a.id && confirm.kind === 'remove' && (
+                          <tr className="bg-[#fafafa]">
+                            <td colSpan={7} className="px-4 pb-3 pl-[60px]">
+                              <div role="alert" className="flex flex-col gap-2 text-[13px] text-muted">
+                                <span className="min-w-0">Remove {a.name} from App Groups? No profile uses it, so no device is affected. {plural(a.builds.length, 'build')} and the signing details go with it; upload the .ipa again to bring it back.</span>
+                                <span className="flex flex-wrap gap-2">
+                                  <UButton tone="danger" size="sm" onClick={() => removeApp(a)}><Trash2 strokeWidth={1.7} />Remove app</UButton>
+                                  <UButton tone="neutral" size="sm" autoFocus onClick={() => setConfirm(null)}>Cancel</UButton>
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
                         {open && (
-                          <tr className="bg-white">
+                          <tr className="bg-white" id={`builds-${a.id}`}>
                             <td colSpan={7} className="pt-3 pr-4 pb-4 pl-[60px]">
                               <div className="mb-2 flex items-center justify-between">
                                 <span className="text-[14px] font-semibold">Builds</span>
-                                <UButton tone="outline" size="sm"><Upload strokeWidth={1.7} />Add build</UButton>
+                                <UButton tone="outline" size="sm" onClick={() => setDrawer({ mode: 'upload', forApp: a })}><Upload strokeWidth={1.7} />Add build</UButton>
                               </div>
                               <div className="overflow-hidden rounded-[6px] border border-line">
                                 {list.map((b) => {
                                   const only = b.status === 'Available' && list.filter((x) => x.status === 'Available').length === 1;
+                                  const asking = confirm?.app === a.id && confirm.version === b.version && confirm.kind !== 'remove';
+                                  const fallback = list.find((x) => x.status === 'Available' && x.version !== b.version)?.version ?? '';
                                   return (
-                                    <div key={b.version} className="flex items-center gap-6 border-b border-row px-3.5 py-2 text-[13px] last:border-0">
-                                      <span className="w-12 font-semibold">{b.version}</span>
-                                      <span className={cn('rounded-[10px] px-2 py-px', b.status === 'Available' ? 'bg-[#e8f5e9] text-ok' : 'bg-[#f5f5f5] text-muted')}>{b.status}</span>
-                                      <span className="grow text-muted">
-                                        {b.status === 'Available' ? `Devices get this build · uploaded ${b.uploaded}` : 'Restore to roll devices back to this build'}
-                                        {only && <span className="ml-2 text-[#7b341e]">· only available build</span>}
-                                      </span>
-                                      <UButton tone="outline" size="sm" onClick={() => (b.status === 'Available' ? askRetire(a.id, b.version) : setStatus(a.id, b.version, 'Available'))}>
-                                        {b.status === 'Available' ? 'Retire' : 'Restore'}
-                                      </UButton>
+                                    <div key={b.version} className={cn('flex flex-col border-b border-row px-3.5 py-2 text-[13px] last:border-0', asking && 'bg-[#fafafa]')}>
+                                      <div className="flex items-center gap-6">
+                                        <span className="w-12 font-semibold">{b.version}</span>
+                                        <span className={cn('rounded-[10px] px-2 py-px', b.status === 'Available' ? 'bg-[#e8f5e9] text-ok' : 'bg-[#f5f5f5] text-muted')}>{b.status}</span>
+                                        <span className="grow text-muted">
+                                          {b.status === 'Available' ? `Devices get this build · uploaded ${b.uploaded}` : 'Restore to roll devices back to this build'}
+                                          {only && <span className="ml-2 text-[#7b341e]">· only available build</span>}
+                                        </span>
+                                        <UButton tone="outline" size="sm" onClick={() => (asking ? setConfirm(null) : b.status === 'Available' ? askRetire(a, b.version) : restore(a, b.version))}>
+                                          {b.status === 'Available' ? 'Retire' : 'Restore'}
+                                        </UButton>
+                                      </div>
+                                      {asking && confirm.kind === 'retire' && (
+                                        <div role="alert" className="mt-2 flex flex-col gap-2 text-muted">
+                                          <span className="min-w-0">Retire {b.version}? {used ? `${plural(a.usedBy.profiles, 'profile')} and ${plural(a.usedBy.devices, 'device')} roll back to ${fallback} at next check-in.` : 'No profile uses this app, so no device is affected.'} You can restore it at any time.</span>
+                                          <span className="flex flex-wrap gap-2">
+                                            <UButton tone="danger" size="sm" onClick={() => retire(a, b.version)}>Retire build</UButton>
+                                            <UButton tone="neutral" size="sm" autoFocus onClick={() => setConfirm(null)}>Keep {b.version}</UButton>
+                                          </span>
+                                        </div>
+                                      )}
+                                      {asking && confirm.kind === 'last' && (
+                                        <div role="alert" className="mt-2 flex flex-col gap-2 text-muted">
+                                          <span className="flex min-w-0 items-start gap-2"><AlertTriangle className="mt-0.5 size-4 shrink-0 text-[#7b341e]" strokeWidth={1.7} /><span><b className="font-semibold text-ink">Can’t retire the only available build.</b> Every profile that uses {a.name} would have nothing to deliver. Restore an older build or add a new one first.</span></span>
+                                          <span className="flex flex-wrap gap-2">
+                                            <UButton tone="outline" size="sm" onClick={() => { setConfirm(null); setDrawer({ mode: 'upload', forApp: a }); }}><Upload strokeWidth={1.7} />Add build</UButton>
+                                            <UButton tone="neutral" size="sm" autoFocus onClick={() => setConfirm(null)}>OK</UButton>
+                                          </span>
+                                        </div>
+                                      )}
                                     </div>
                                   );
                                 })}
                               </div>
                               <p className="mt-2 mb-0 text-[13px] text-[#7b341e]">
-                                {a.usedBy.profiles
+                                {used
                                   ? `Retiring or restoring a build changes what ${plural(a.usedBy.devices, 'device')} in ${plural(a.usedBy.profiles, 'profile')} get at next check-in.`
                                   : 'No profile uses this app yet, so build changes don’t reach any device.'}
                               </p>
@@ -143,22 +247,20 @@ export function AppLibraryPage() {
                 </tbody>
               </table>
             </div>
-            <p className="mt-3 text-[13px] text-muted">Showing {rows.length} of {libraryApps.length} apps</p>
+            {undo && <div className="mt-3"><UndoRow onUndo={undoRemove}>Removed: <span className="text-ink">{undo.app.name}</span> and its {plural(undo.app.builds.length, 'build')}. No device was affected.</UndoRow></div>}
+            <p className="mt-3 text-[13px] text-muted" aria-live="polite">Showing {rows.length} of {apps.length} apps{filter === 'attention' ? ' that need attention' : ''}</p>
           </TabsContent>
           <TabsContent value="vpp" className="pt-10 text-center text-[14px] text-muted">VPP licences arrive with Apps and Books.</TabsContent>
         </Tabs>
       </div>
-      <RetireDialog
-        open={!!pending}
-        appName={pendingApp?.name ?? ''}
-        version={pending?.version ?? ''}
-        fallback={fallback}
-        profiles={pendingApp?.usedBy.profiles ?? 0}
-        devices={pendingApp?.usedBy.devices ?? 0}
-        onKeep={() => setPending(null)}
-        onRetire={() => { if (pending) setStatus(pending.app, pending.version, 'Retired'); setPending(null); }}
+      <AddInhouseDrawer
+        open={!!drawer}
+        onOpenChange={(o) => !o && setDrawer(null)}
+        context="library"
+        initialMode={drawer?.mode ?? 'upload'}
+        forApp={drawer?.forApp}
+        onUpload={(b, src) => (drawer?.forApp ? addBuild(drawer.forApp, b) : addApp(b, src))}
       />
-      <LastBuildDialog open={!!lastBuild} appName={libraryApps.find((a) => a.id === lastBuild?.app)?.name ?? ''} version={lastBuild?.version ?? ''} onClose={() => setLastBuild(null)} />
     </AppShell>
   );
 }

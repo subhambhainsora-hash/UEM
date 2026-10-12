@@ -25,28 +25,25 @@ const tones: Record<Tone, string> = {
   disabled: 'bg-[rgba(9,30,66,0.04)] text-[#adadad] border-0',
 };
 
-export function UButton({
-  tone = 'primary',
-  size = 'md',
-  className,
-  ...props
-}: Omit<React.ComponentProps<typeof Button>, 'size'> & { tone?: Tone; size?: 'sm' | 'md' | 'lg' }) {
-  return (
-    <Button
-      {...props}
-      className={cn(
-        'rounded-[5px] font-semibold active:scale-100 gap-1.5 [&_svg:not([class*=size-])]:size-4',
-        size === 'sm' && 'h-8 px-3 text-[13px]',
-        size === 'md' && 'h-9 px-3.5 text-[14px]',
-        size === 'lg' && 'h-10 px-4 text-[15px]',
-        tones[tone],
-        className,
-      )}
-    />
-  );
-}
+export const UButton = React.forwardRef<HTMLButtonElement, Omit<React.ComponentProps<typeof Button>, 'size'> & { tone?: Tone; size?: 'sm' | 'md' | 'lg' }>(
+  function UButton({ tone = 'primary', size = 'md', className, ...props }, ref) {
+    return (
+      <Button
+        ref={ref}
+        {...props}
+        className={cn(
+          'rounded-[5px] font-semibold active:scale-100 gap-1.5 [&_svg:not([class*=size-])]:size-4',
+          size === 'sm' && 'h-8 px-3 text-[13px]',
+          size === 'md' && 'h-9 px-3.5 text-[14px]',
+          size === 'lg' && 'h-10 px-4 text-[15px]',
+          tones[tone],
+          className,
+        )}
+      />
+    );
+  },
+);
 
-/* App icon, chips and badges -------------------------------------------- */
 export function AppIcon({ logo, color, size = 42, name }: { logo?: string; color: string; size?: number; name?: string; initials?: string }) {
   const radius = Math.round(size * 0.225);
   if (logo)
@@ -232,3 +229,54 @@ export function SigningBadge({ expires, short }: { expires?: string; short?: boo
     </span>
   );
 }
+
+/* Menu: kit dropdown-menu with the UEM item look ---------------------------- */
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
+
+export function UMenu({ trigger, children, align = 'end' }: { trigger: React.ReactNode; children: React.ReactNode; align?: 'start' | 'end' }) {
+  return (
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+      <DropdownMenuContent align={align} sideOffset={6} className="min-w-[220px] rounded-[8px] p-1 font-sans text-ink">
+        {children}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+export function UMenuItem({ icon: Icon, children, hint, danger, disabled, onSelect }: {
+  icon?: React.ElementType; children: React.ReactNode; hint?: string; danger?: boolean; disabled?: boolean; onSelect?: () => void;
+}) {
+  return (
+    <DropdownMenuItem
+      disabled={disabled}
+      onSelect={onSelect}
+      className={cn(
+        'flex cursor-pointer items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-[14px] leading-5 text-ink focus:bg-[#f3f3f5] focus:text-ink data-[disabled]:opacity-100 data-[disabled]:text-[#adadad] [&_svg]:text-current',
+        danger && 'text-bad focus:bg-[#fdecea] focus:text-bad',
+      )}
+    >
+      {Icon && <Icon className="size-4 shrink-0" strokeWidth={1.7} />}
+      <span className="flex min-w-0 grow flex-col">
+        <span>{children}</span>
+        {hint && <span className="text-[12px] leading-4 text-muted">{hint}</span>}
+      </span>
+    </DropdownMenuItem>
+  );
+}
+export const UMenuSeparator = () => <DropdownMenuSeparator className="my-1 bg-line" />;
+
+export const IconButton = React.forwardRef<HTMLButtonElement, React.ComponentProps<'button'> & { label: string }>(function IconButton({ label, children, className, ...props }, ref) {
+  return (
+    <button
+      ref={ref}
+      type="button"
+      aria-label={label}
+      title={label}
+      {...props}
+      className={cn('flex size-8 shrink-0 items-center justify-center rounded-[6px] border-0 bg-transparent text-ink hover:bg-[#f3f3f5] data-[state=open]:bg-[#f3f3f5] disabled:text-[#adadad] disabled:hover:bg-transparent', className)}
+    >
+      {children}
+    </button>
+  );
+});
