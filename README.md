@@ -75,3 +75,8 @@ App Store apps show their real App Store artwork, fetched from Apple's iTunes Se
 Layout: the app has a 1180px minimum width and scrolls on narrower windows. On short screens the working area scrolls while the header, sidebar and footer stay put. The "Prototype" chip in the header switches between screen states.
 
 Data is mock data in `src/data.ts`. There is no backend yet.
+
+## Prototype routes
+`/#/` Profiles · `/#/l1` App Groups · `/#/d1`–`/#/d9` App Catalog states · `/#/s1`, `/#/s2` App settings drawers · `/#/k1`–`/#/k4` Kiosk and SSO · `/#/p1`–`/#/p3` Email, Web Shortcuts, Web Content Filter.
+
+Every clickable control does something: sidebar items outside the built screens say so in a toast, the sidebar collapses, the org and account menus open, row triple-dot menus act, drawers read a real file pick. The click crawler in the design audit (`scratchpad/audit2/crawl.js` during development) was used to verify this.

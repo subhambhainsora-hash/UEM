@@ -36,3 +36,12 @@ Page gutter 50px, top 32px. Section nav 229px with 25px right padding and a full
 
 ## States
 Hover: subtle surface change only. Focus: 2px `#4c9aff` outline. Disabled: `rgba(9,30,66,0.04)` surface with `#adadad` text. Invalid: `#de350b` border plus a message. Unsaved: count in the footer.
+
+## Flow patterns (ported from AI Agent Governance › Access Policy)
+- **Confirm inline, in the row that owns the action.** No modal for delete, remove, retire or publish. The row grows a line that states the computed consequence (device counts, Kiosk/SSO dependencies, what rolls back) with the action and Cancel underneath. Cancel takes focus. The only modals left are the App Store country switch (a list of consequences) and the leave-with-unsaved-changes interrupt.
+- **Undo where the row was.** After a removal the list shows a `UndoRow` ("Removed: X. 148 devices uninstall it after you submit. Undo") in place, not a toast.
+- **Status bar inside the container.** The profile footer carries one `aria-live` sentence per state: idle ("Devices match this profile"), unsaved ("N unsaved changes. Devices stay on the last submitted profile"), blocked (red, with a "Show me" link to the first flagged section) and submitted (green check). Submit is disabled when nothing is pending; Ctrl/Cmd+S submits; "Discard changes" appears only when dirty.
+- **Row-state chips.** "New · not submitted" and "Edited · not submitted" on catalog rows; a blue dot on section-nav items with unsaved edits; a warning icon on sections that block submit.
+- **Overflow menus.** `UMenu` / `UMenuItem` (kit dropdown-menu) for row actions; the destructive item is last, after a separator, and is disabled with a hint rather than hidden when a dependency blocks it.
+- **Toasts** (`useToast`) only confirm something that already happened and never ask a question. Top-right, auto-dismiss, optional one action.
+- **Explainer on demand.** "How submitting works" opens an inline strip under the page title; closed by default.

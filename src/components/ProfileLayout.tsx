@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { AlertTriangle, Globe, LayoutGrid, Lock, Mail, Settings2, ShieldCheck, Wifi } from 'lucide-react';
+import { AlertTriangle, Check, Globe, Info, LayoutGrid, Lock, Mail, Settings2, ShieldCheck, Wifi, X } from 'lucide-react';
+import { plural, profile } from '../data';
 import { cn } from './ui/utils';
 import { AppShell } from './AppShell';
 import { PageTitle, FooterActions } from './ds';
@@ -23,27 +24,57 @@ const sections: [Section, Icon][] = [
   ['Advanced Settings', { lucide: Settings2 }],
 ];
 
-export function ProfileLayout({ section, onSection, children, dirty = 0, issueSections = [], onCancel, onSubmit }: {
+export function ProfileLayout({ section, onSection, children, dirty = 0, dirtySections = [], issueSections = [], status = 'idle', onCancel, onSubmit, onDiscard }: {
   section: Section;
   onSection: (s: Section) => void;
   children: React.ReactNode;
-  /** Number of unsaved changes; shown next to Submit. */
+  /** Number of unsaved changes; shown in the status bar. */
   dirty?: number;
+  /** Sections holding unsaved changes; marked in the nav. */
+  dirtySections?: string[];
   /** Sections with a blocking issue after a failed submit. */
   issueSections?: string[];
+  /** What the status bar says. */
+  status?: 'idle' | 'blocked' | 'submitted';
   onCancel?: () => void;
   onSubmit?: () => void;
+  onDiscard?: () => void;
 }) {
+  const [how, setHow] = React.useState(false);
+  React.useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (dirty > 0) onSubmit?.(); }
+    };
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, [dirty, onSubmit]);
+  const firstIssue = sections.map(([n]) => n).find((n) => issueSections.includes(n));
   return (
     <AppShell page="profiles">
       <div className="flex min-h-0 grow flex-col overflow-y-auto px-[50px] pt-8 pb-4">
-        <PageTitle>Profile configuration</PageTitle>
+        <div className="flex items-center justify-between gap-4">
+          <PageTitle>Profile configuration</PageTitle>
+          <button type="button" aria-expanded={how} onClick={() => setHow((h) => !h)} className="flex items-center gap-1.5 border-0 bg-transparent p-0 text-[14px] text-muted hover:text-ink">
+            <Info className="size-4" strokeWidth={1.7} />How submitting works
+          </button>
+        </div>
+        {how && (
+          <div role="region" aria-label="How submitting works" className="mt-4 flex items-start gap-3 rounded-[8px] bg-info-bg px-4 py-3 text-[14px] leading-[22px] text-[#171717]">
+            <Info className="mt-[3px] size-4 shrink-0 text-uem" strokeWidth={1.7} />
+            <div className="grow">
+              <p className="m-0">Edits collect here and nothing reaches devices until you submit. The {plural(profile.deviceCount, 'device')} in {profile.name} pick up a submitted profile at their next check-in, usually within 15 minutes.</p>
+              <p className="mt-1.5 mb-0">Removing an app uninstalls it. Kiosk and Extensible SSO pick from the App Catalog, so removing an app they use needs a replacement before submit. Every submit is recorded in the audit log with your name and the time.</p>
+            </div>
+            <button type="button" aria-label="Close" onClick={() => setHow(false)} className="flex shrink-0 border-0 bg-transparent p-0 text-muted hover:text-ink"><X className="size-4" strokeWidth={1.7} /></button>
+          </div>
+        )}
         <div className="mt-6 flex grow items-stretch">
           {/* Section nav · "Nav Items main states" */}
           <div role="tablist" aria-orientation="vertical" className="flex w-[229px] shrink-0 flex-col gap-2 self-stretch border-e border-line pr-[25px]">
             {sections.map(([name, icon]) => {
               const active = name === section;
               const flagged = issueSections.includes(name);
+              const edited = dirtySections.includes(name);
               return (
                 <button
                   key={name}
@@ -62,7 +93,7 @@ export function ProfileLayout({ section, onSection, children, dirty = 0, issueSe
                     <icon.lucide className="size-[16.67px] shrink-0" strokeWidth={1.7} />
                   )}
                   <span className="grow">{name}</span>
-                  {flagged && <AlertTriangle aria-label="Needs attention" className="size-4 text-bad" strokeWidth={1.7} />}
+                  {flagged ? <AlertTriangle aria-label="Needs attention" className="size-4 text-bad" strokeWidth={1.7} /> : edited ? <span aria-label="Unsaved changes" title="Unsaved changes" className="size-2 rounded-full bg-uem" /> : null}
                 </button>
               );
             })}
@@ -72,16 +103,29 @@ export function ProfileLayout({ section, onSection, children, dirty = 0, issueSe
           </section>
         </div>
       </div>
-      <footer className="shrink-0 border-t border-line px-[50px] py-4">
-        <FooterActions>
-          {dirty > 0 && (
-            <span className="mr-2 text-[13px] text-muted" aria-live="polite">
-              {dirty} unsaved {dirty === 1 ? 'change' : 'changes'}
-            </span>
-          )}
-          <UButton tone="outline" size="lg" onClick={onCancel}>Cancel</UButton>
-          <UButton size="lg" onClick={onSubmit}>Submit</UButton>
-        </FooterActions>
+      <footer className={cn('shrink-0 border-t border-line px-[50px] py-3 transition-colors', status === 'blocked' ? 'bg-[#fdecea]/50' : dirty > 0 ? 'bg-[#f0f7ff]' : 'bg-[#fafafa]')}>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="min-w-0 grow text-[13px]" aria-live="polite">
+            {status === 'blocked' ? (
+              <span role="alert" className="text-bad">
+                <b className="font-semibold">{issueSections.length === 1 ? '1 section needs' : `${issueSections.length} sections need`} attention before this can go live.</b>{' '}
+                {firstIssue && <button type="button" onClick={() => onSection(firstIssue)} className="border-0 bg-transparent p-0 font-semibold text-bad underline underline-offset-2 hover:no-underline">Show me</button>}
+                <span className="text-muted"> Nothing has been sent to devices.</span>
+              </span>
+            ) : dirty > 0 ? (
+              <span className="text-muted"><b className="font-semibold text-ink">{plural(dirty, 'unsaved change')}.</b> Devices stay on the last submitted profile until you submit.</span>
+            ) : status === 'submitted' ? (
+              <span className="inline-flex items-center gap-1.5 font-medium text-[#006644]"><Check className="size-4" strokeWidth={2} />Submitted. {plural(profile.deviceCount, 'device')} get it at their next check-in.</span>
+            ) : (
+              <span className="text-muted">Devices match this profile. Change something and submit it from here, or press Ctrl+S.</span>
+            )}
+          </div>
+          <FooterActions>
+            {dirty > 0 && <UButton tone="link" size="lg" onClick={onDiscard}>Discard changes</UButton>}
+            <UButton tone="outline" size="lg" onClick={onCancel}>{dirty > 0 ? 'Cancel' : 'Back to profiles'}</UButton>
+            <UButton size="lg" disabled={dirty === 0} onClick={onSubmit} title={dirty === 0 ? 'Nothing to submit' : 'Send these changes to devices (Ctrl+S)'}>Submit</UButton>
+          </FooterActions>
+        </div>
       </footer>
     </AppShell>
   );

@@ -173,3 +173,23 @@ export function ProfileFields({ onChange }: { onChange?: () => void }) {
 export const tabListClass = 'h-auto w-full justify-start gap-0 rounded-none bg-transparent p-0';
 export const tabTriggerClass =
   'h-11 flex-none gap-2 rounded-none px-4 text-[14px] font-normal text-ink after:inset-x-0 data-[state=active]:font-semibold data-[state=active]:text-uem';
+
+/* Undo line after a removal · sits inside the list that lost the row ---------- */
+export function UndoRow({ children, onUndo }: { children: React.ReactNode; onUndo: () => void }) {
+  return (
+    <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-[6px] bg-[#f7f8fa] px-3.5 py-2.5 text-[13px] text-muted">
+      <span className="min-w-0">{children}</span>
+      <button type="button" onClick={onUndo} className="shrink-0 border-0 bg-transparent p-0 text-[13px] font-semibold text-uem hover:underline">Undo</button>
+    </div>
+  );
+}
+
+/* Row-state chip · what differs from the last submit ------------------------- */
+export function StateChip({ state }: { state: 'new' | 'edited' | null | undefined }) {
+  if (!state) return null;
+  return (
+    <span className={cn('inline-flex items-center rounded-[8px] px-2 py-px font-["Inter"] text-[11px] font-medium', state === 'new' ? 'bg-[#fff7d6] text-[#7a5a00]' : 'bg-info-bg text-[#0747a6]')}>
+      {state === 'new' ? 'New · not submitted' : 'Edited · not submitted'}
+    </span>
+  );
+}
