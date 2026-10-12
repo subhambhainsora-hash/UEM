@@ -106,9 +106,9 @@ export function InfoCard({ title, sub }: { title: React.ReactNode; sub?: React.R
 export function InfoAlert({ children, tone = 'info' }: { children: React.ReactNode; tone?: 'info' | 'warn' | 'error' }) {
   const tones = { info: 'bg-info-bg text-[#171717]', warn: 'bg-[#fff3e0] text-[#7b341e]', error: 'bg-[#fdecea] text-bad' };
   return (
-    <div role={tone === 'error' ? 'alert' : 'status'} className={cn('flex gap-2.5 rounded-[8px] px-[34px] py-3 text-[14px] leading-[22px]', tones[tone])}>
-      <span className="flex items-center py-1"><img src={infoFill} alt="" width={20} height={20} className="size-5" /></span>
-      <p className="m-0 grow">{children}</p>
+    <div role={tone === 'error' ? 'alert' : 'status'} className={cn('flex items-start gap-2.5 rounded-[8px] px-5 py-3 text-[14px] leading-[22px]', tones[tone])}>
+      <span className="flex h-[22px] shrink-0 items-center"><img src={infoFill} alt="" width={20} height={20} className="size-5 shrink-0" /></span>
+      <p className="m-0 min-w-0 grow">{children}</p>
     </div>
   );
 }
