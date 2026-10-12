@@ -5,6 +5,7 @@ import { ToggleGroup, ToggleGroupItem } from '../components/ui/toggle-group';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 import { AppIcon, Drawer, SigningBadge, SourceBadge, ToggleRow, UButton, UCheckbox } from '../components/uem';
 import { LastBuildDialog } from './Dialogs';
+import { tabListClass, tabTriggerClass } from '../components/ds';
 import { cn } from '../components/ui/utils';
 import { storeSearchResults, libraryApps, signingState, plural, type CatalogApp } from '../data';
 
@@ -212,7 +213,6 @@ export function AppSettingsDrawer({ app, onOpenChange, onSave }: { app: CatalogA
     setBuilds((b) => ({ ...b, [v]: s === 'Available' ? 'Retired' : 'Available' }));
     onSave?.();
   };
-  const tab = 'h-12 flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-3.5 text-[14px] font-normal text-ink shadow-none data-[state=active]:border-uem data-[state=active]:font-medium data-[state=active]:text-uem data-[state=active]:shadow-none';
   return (
     <Drawer
       open={!!app}
@@ -269,10 +269,10 @@ export function AppSettingsDrawer({ app, onOpenChange, onSave }: { app: CatalogA
             )}
           </div>
           <Tabs defaultValue="settings" className="mt-4 gap-0">
-            <TabsList className="h-auto w-full justify-start rounded-none border-y border-soft bg-transparent px-6 py-0">
-              <TabsTrigger value="settings" className={tab}>Settings</TabsTrigger>
-              <TabsTrigger value="domains" className={tab}>Domains</TabsTrigger>
-              <TabsTrigger value="config" className={tab}>Config</TabsTrigger>
+            <TabsList className={cn(tabListClass, 'px-6')}>
+              <TabsTrigger value="settings" className={tabTriggerClass}>Settings</TabsTrigger>
+              <TabsTrigger value="domains" className={tabTriggerClass}>Domains</TabsTrigger>
+              <TabsTrigger value="config" className={tabTriggerClass}>Config</TabsTrigger>
             </TabsList>
             <TabsContent value="settings" className="px-6 pt-2">
               {toggleDefs.map(([k, t, h]) => (
