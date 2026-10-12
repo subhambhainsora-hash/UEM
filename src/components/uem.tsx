@@ -4,6 +4,7 @@
  * the UEM product styling from the design file.
  */
 import * as React from 'react';
+import { Package } from 'lucide-react';
 import { Button } from './ui/button';
 import { Switch } from './ui/switch';
 import { Checkbox } from './ui/checkbox';
@@ -45,21 +46,27 @@ export function UButton({
 }
 
 /* App icon, chips and badges -------------------------------------------- */
-export function AppIcon({ initials, color, size = 42 }: { initials: string; color: string; size?: number }) {
-  const small = size < 32;
+export function AppIcon({ logo, color, size = 42, name }: { logo?: string; color: string; size?: number; name?: string; initials?: string }) {
+  const radius = Math.round(size * 0.225);
+  if (logo)
+    return (
+      <img
+        src={logo}
+        alt={name ? `${name} icon` : ''}
+        width={size}
+        height={size}
+        className="shrink-0 border border-black/10 object-cover"
+        style={{ width: size, height: size, borderRadius: radius }}
+      />
+    );
+  /* In-house app: no public artwork, so a generic app tile in the app's colour. */
   return (
     <span
       aria-hidden
-      className="flex shrink-0 items-center justify-center font-bold text-white"
-      style={{
-        width: size,
-        height: size,
-        borderRadius: small ? 6 : 10,
-        background: color,
-        fontSize: small ? 10 : size > 44 ? 17 : 15,
-      }}
+      className="flex shrink-0 items-center justify-center text-white"
+      style={{ width: size, height: size, borderRadius: radius, background: color }}
     >
-      {initials}
+      <Package style={{ width: size * 0.5, height: size * 0.5 }} strokeWidth={1.7} />
     </span>
   );
 }

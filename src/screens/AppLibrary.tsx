@@ -88,7 +88,7 @@ export function AppLibraryPage() {
                               <button type="button" aria-label={open ? 'Hide builds' : 'Show builds'} aria-expanded={open} onClick={() => setOpenRow(open ? null : a.id)} className="flex border-0 bg-transparent p-0 text-ink">
                                 {open ? <ChevronDown className="size-4 rotate-180" /> : <ChevronRight className="size-4" />}
                               </button>
-                              <AppIcon initials={a.initials} color={a.color} size={32} />
+                              <AppIcon logo={a.logo} name={a.name} color={a.color} size={32} />
                               <span className="text-[15px] font-semibold">{a.name}</span>
                             </span>
                           </td>

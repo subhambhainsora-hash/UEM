@@ -57,7 +57,7 @@ export function AddStoreDrawer({
             return (
               <label key={r.id} className={cn('flex items-center gap-3.5 border-b border-row px-4 py-2 last:border-0', sel.includes(r.id) && 'bg-[#f0f7ff]')}>
                 <UCheckbox checked={on} disabled={inProfile} onCheckedChange={() => toggle(r.id)} aria-label={r.name} />
-                <AppIcon initials={r.initials} color={r.color} size={34} />
+                <AppIcon logo={r.logo} name={r.name} color={r.color} size={34} />
                 <span className="flex grow flex-col">
                   <span className="text-[15px] text-heading">{r.name}</span>
                   <span className="text-[12px] text-muted">Microsoft Corporation</span>
@@ -133,7 +133,7 @@ export function AddInhouseDrawer({
                       onCheckedChange={() => setSel((s) => (s.includes(a.id) ? s.filter((x) => x !== a.id) : [...s, a.id]))}
                       aria-label={a.name}
                     />
-                    <AppIcon initials={a.initials} color={a.color} size={36} />
+                    <AppIcon logo={a.logo} name={a.name} color={a.color} size={36} />
                     <span className="flex grow flex-col">
                       <span className="text-[15px] font-medium text-heading">{a.name}</span>
                       <span className="text-[12px] text-muted">{a.bundleId} · build {a.build}</span>
@@ -231,7 +231,7 @@ export function AppSettingsDrawer({ app, onOpenChange, onSave }: { app: CatalogA
         <>
           <div className="px-6">
             <div className="flex items-center gap-3.5">
-              <AppIcon initials={app.initials} color={app.color} size={48} />
+              <AppIcon logo={app.logo} name={app.name} color={app.color} size={48} />
               <div className="flex grow flex-col">
                 <span className="text-[16px] font-semibold text-heading">{app.name}</span>
                 <span className="text-[13px] text-muted">{app.bundleId}</span>

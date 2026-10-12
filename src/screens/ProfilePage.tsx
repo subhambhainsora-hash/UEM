@@ -142,7 +142,7 @@ export function ProfilePage({ initial = {} }: { initial?: ProfileState }) {
         onAdd={(ids) => {
           const added = storeSearchResults
             .filter((r) => ids.includes(r.id) && !store.some((s) => s.id === r.id))
-            .map((r) => ({ id: r.id, name: r.name, bundleId: `com.microsoft.${r.id}`, initials: r.initials, color: r.color, source: 'App Store' as const, chips: [] }));
+            .map((r) => ({ id: r.id, name: r.name, bundleId: r.bundleId, initials: r.initials, color: r.color, logo: r.logo, source: 'App Store' as const, chips: [] }));
           if (added.length) { setStore((s) => [...s, ...added]); touch(); }
           setStoreOpen(false);
         }}

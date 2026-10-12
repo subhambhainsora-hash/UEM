@@ -98,7 +98,7 @@ export function KioskSection({
                 <button type="button" aria-invalid={!current || undefined} className={cn('flex h-11 w-[380px] items-center gap-3 rounded-[6px] border bg-white px-3 text-[14px]', open ? 'border-uem' : error && !current ? 'border-bad' : 'border-line')}>
                   {current ? (
                     <>
-                      <AppIcon initials={current.initials} color={current.color} size={26} />
+                      <AppIcon logo={current.logo} name={current.name} color={current.color} size={26} />
                       <span className="grow text-left">{current.name}</span>
                       <SourceBadge source={current.source} />
                     </>
@@ -112,7 +112,7 @@ export function KioskSection({
                 {catalog.map((a) => (
                   <button key={a.id} type="button" onClick={() => { onSingleApp(a.id); setOpen(false); }}
                     className={cn('flex h-10 w-full items-center gap-3 rounded-[4px] border-0 bg-white px-2 text-[14px] text-ink outline-none hover:bg-[#f3f3f5] focus-visible:bg-[#f3f3f5]', a.id === singleApp && 'bg-nav-bg')}>
-                    <AppIcon initials={a.initials} color={a.color} size={26} />
+                    <AppIcon logo={a.logo} name={a.name} color={a.color} size={26} />
                     <span className="grow text-left">{a.name}</span>
                     <SourceBadge source={a.source} />
                   </button>
@@ -161,7 +161,7 @@ export function KioskSection({
                   return (
                     <TableRow key={a.id} className="border-row">
                       <TableCell className="px-3.5 py-2 text-[15px]">
-                        <span className="flex items-center gap-2.5"><AppIcon initials={a.initials} color={a.color} size={24} />{a.name}</span>
+                        <span className="flex items-center gap-2.5"><AppIcon logo={a.logo} name={a.name} color={a.color} size={24} />{a.name}</span>
                       </TableCell>
                       <TableCell className="px-3.5"><SourceBadge source={a.source} /></TableCell>
                       <TableCell className="px-3.5">
@@ -249,7 +249,7 @@ export function SsoSection({ catalog, allowed, onAllowed, all, onAll, onChange, 
                 if (!a) return null;
                 return (
                   <Pill key={id} onRemove={all ? undefined : () => { onAllowed(allowed.filter((x) => x !== id)); }}>
-                    <AppIcon initials={a.initials} color={a.color} size={20} />{a.name}
+                    <AppIcon logo={a.logo} name={a.name} color={a.color} size={20} />{a.name}
                   </Pill>
                 );
               })}
@@ -260,7 +260,7 @@ export function SsoSection({ catalog, allowed, onAllowed, all, onAll, onChange, 
             {catalog.map((a) => (
               <label key={a.id} className="flex h-10 items-center gap-3 rounded-[4px] px-2 text-[14px] hover:bg-[#f3f3f5]">
                 <UCheckbox checked={allowed.includes(a.id)} onCheckedChange={(v) => onAllowed(v ? [...allowed, a.id] : allowed.filter((x) => x !== a.id))} />
-                <AppIcon initials={a.initials} color={a.color} size={22} /><span className="grow">{a.name}</span><SourceBadge source={a.source} />
+                <AppIcon logo={a.logo} name={a.name} color={a.color} size={22} /><span className="grow">{a.name}</span><SourceBadge source={a.source} />
               </label>
             ))}
           </PopoverContent>

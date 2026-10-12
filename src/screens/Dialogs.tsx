@@ -21,7 +21,7 @@ export function CountryDialog({ to, from, open, onKeep, onSwitch }: { to: string
         <div className="mt-3.5 rounded-[4px] bg-[#fff3e0] px-3.5 py-3">
           <p className="m-0 text-[14px] font-semibold text-[#7b341e]">1 app isn't sold in {to} and will be removed from {plural(profile.deviceCount, 'device')}</p>
           <div className="mt-2.5 flex items-center gap-2.5 text-[14px]">
-            <AppIcon initials="CP" color="#455a64" size={26} />
+            <AppIcon color="#455a64" size={26} />
             Contoso Payroll <span className="text-[12px] text-muted">devices uninstall it at next check-in</span>
           </div>
         </div>
