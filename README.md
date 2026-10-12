@@ -38,6 +38,10 @@ Visuals follow the **mO WEB Design System** in Figma (UEM Dashboard design, fram
 
 Icons the Figma export returned as placeholders (Getting started, Email policy, Notification, Manage devices, Devices policy, Manage User, Approval requests, and the first five profile sections) use the matching lucide icon at the same size.
 
+## App icons
+
+App Store apps show their real App Store artwork, fetched from Apple's iTunes Search API and stored in `src/assets/logos/`. In-house apps have no public artwork and show a generic app tile in the app's colour. Nothing uses letter avatars.
+
 ## Shared components
 
 `src/components/ui/` is the shared miniOrange component kit, copied unchanged from the Secure Share and AI Agent Governance apps. It is shadcn/ui on Radix, with Tailwind 4 and the same token file (`src/styles/default_theme.css`).

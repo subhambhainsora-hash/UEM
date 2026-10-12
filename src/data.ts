@@ -1,3 +1,12 @@
+import slackLogo from './assets/logos/slack.png';
+import zoomLogo from './assets/logos/zoom.png';
+import outlookLogo from './assets/logos/outlook.png';
+import teamsLogo from './assets/logos/teams.png';
+import authenticatorLogo from './assets/logos/authenticator.png';
+import edgeLogo from './assets/logos/edge.png';
+import onedriveLogo from './assets/logos/onedrive.png';
+import wordLogo from './assets/logos/word.png';
+
 export type Source = 'App Store' | 'Enterprise';
 
 /** The profile being edited. Device count drives every impact message. */
@@ -31,14 +40,16 @@ export interface CatalogApp {
   source: Source;
   chips: string[];
   meta?: string;
+  /** Real App Store artwork. In-house apps have none and show the generic tile. */
+  logo?: string;
   /** Enterprise apps only: ISO date the signing profile expires. */
   signingExpires?: string;
 }
 
 export const appStoreApps: CatalogApp[] = [
-  { id: 'slack', name: 'Slack', bundleId: 'com.tinyspeck.chatlyio', initials: 'S', color: '#5b3a8c', source: 'App Store', chips: ['Removable', 'Managed config'] },
-  { id: 'zoom', name: 'Zoom Workplace', bundleId: 'us.zoom.videomeetings', initials: 'Z', color: '#2d6cdf', source: 'App Store', chips: ['Removable', 'Per-app VPN'] },
-  { id: 'outlook', name: 'Microsoft Outlook', bundleId: 'com.microsoft.Office.Outlook', initials: 'O', color: '#1f5fa8', source: 'App Store', chips: ['Managed config', 'Prevent backup'] },
+  { id: 'slack', name: 'Slack', bundleId: 'com.tinyspeck.chatlyio', initials: 'S', color: '#5b3a8c', logo: slackLogo, source: 'App Store', chips: ['Removable', 'Managed config'] },
+  { id: 'zoom', name: 'Zoom Workplace', bundleId: 'us.zoom.videomeetings', initials: 'Z', color: '#2d6cdf', logo: zoomLogo, source: 'App Store', chips: ['Removable', 'Per-app VPN'] },
+  { id: 'outlook', name: 'Microsoft Outlook', bundleId: 'com.microsoft.Office.Outlook', initials: 'O', color: '#1f5fa8', logo: outlookLogo, source: 'App Store', chips: ['Managed config', 'Prevent backup'] },
 ];
 
 export const enterpriseApps: CatalogApp[] = [
@@ -47,12 +58,12 @@ export const enterpriseApps: CatalogApp[] = [
 ];
 
 export const storeSearchResults = [
-  { id: 'teams', name: 'Microsoft Teams', initials: 'T', color: '#4b53bc' },
-  { id: 'outlook', name: 'Microsoft Outlook', initials: 'O', color: '#1f5fa8' },
-  { id: 'auth', name: 'Microsoft Authenticator', initials: 'MA', color: '#0052cc' },
-  { id: 'edge', name: 'Microsoft Edge', initials: 'E', color: '#00695c' },
-  { id: 'onedrive', name: 'Microsoft OneDrive', initials: 'OD', color: '#1565c0' },
-  { id: 'word', name: 'Microsoft Word', initials: 'W', color: '#1f5fa8' },
+  { id: 'teams', name: 'Microsoft Teams', bundleId: 'com.microsoft.skype.teams', initials: 'T', color: '#4b53bc', logo: teamsLogo },
+  { id: 'outlook', name: 'Microsoft Outlook', bundleId: 'com.microsoft.Office.Outlook', initials: 'O', color: '#1f5fa8', logo: outlookLogo },
+  { id: 'auth', name: 'Microsoft Authenticator', bundleId: 'com.microsoft.azureauthenticator', initials: 'MA', color: '#0052cc', logo: authenticatorLogo },
+  { id: 'edge', name: 'Microsoft Edge', bundleId: 'com.microsoft.microsoftedge', initials: 'E', color: '#00695c', logo: edgeLogo },
+  { id: 'onedrive', name: 'Microsoft OneDrive', bundleId: 'com.microsoft.skydrive', initials: 'OD', color: '#1565c0', logo: onedriveLogo },
+  { id: 'word', name: 'Microsoft Word', bundleId: 'com.microsoft.Office.Word', initials: 'W', color: '#1f5fa8', logo: wordLogo },
 ];
 
 export interface Build {
@@ -69,6 +80,8 @@ export interface LibraryApp {
   color: string;
   build: string;
   delivery: 'Hosted .ipa' | 'Manifest URL';
+  /** In-house apps ship no public artwork; the generic tile is used. */
+  logo?: string;
   signingExpires?: string;
   /** Profiles that install this app, and the devices they cover. */
   usedBy: { profiles: number; devices: number };

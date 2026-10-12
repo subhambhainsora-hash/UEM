@@ -12,7 +12,7 @@ function AppRow({ app, onConfigure, onRemove, flag }: { app: CatalogApp; onConfi
   const blocked = signing?.kind === 'expired';
   return (
     <div className={cn('flex min-h-[72px] items-center gap-3.5 border-b border-row py-2.5', flag && blocked && '-mx-3 rounded-[4px] border border-[#f5c6c2] bg-[#fdecea]/60 px-3')}>
-      <AppIcon initials={app.initials} color={app.color} />
+      <AppIcon logo={app.logo} name={app.name} color={app.color} />
       <span className="flex min-w-[150px] grow flex-col gap-0.5">
         <span className="text-[15px] font-semibold text-heading">{app.name}</span>
         <span className="text-[13px] text-muted">
