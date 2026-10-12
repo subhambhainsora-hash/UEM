@@ -223,7 +223,7 @@ function ScreenNav() {
 export default function App() {
   return (
     <ToastProvider>
-    <div className="h-screen">
+    <div className="app-root">
       <Routes>
         <Route path="/" element={<ProfilesPage />} />
         {screens.map((s) => (
