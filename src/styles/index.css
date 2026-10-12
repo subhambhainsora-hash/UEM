@@ -42,10 +42,10 @@
 }
 
 @layer base {
-  /* The whole console renders 6% smaller than the Figma frames; portals (menus, drawers, toasts) scale with it. */
-  html { zoom: 0.94; }
+  /* The whole console renders 4% smaller than the Figma frames; portals (menus, drawers, toasts) scale with it. */
+  html { zoom: 0.96; }
   /* 100vh is measured before zoom, so the app shell compensates to keep filling the viewport. */
-  .app-root { height: calc(100vh / 0.94); }
+  .app-root { height: calc(100vh / 0.96); }
   body { @apply font-sans text-ink bg-white m-0; }
   button { cursor: pointer; font-family: inherit; }
   button:disabled { cursor: not-allowed; }
