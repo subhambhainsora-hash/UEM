@@ -122,7 +122,7 @@ export function AppLibraryPage() {
                                         {b.status === 'Available' ? `Devices get this build · uploaded ${b.uploaded}` : 'Restore to roll devices back to this build'}
                                         {only && <span className="ml-2 text-[#7b341e]">· only available build</span>}
                                       </span>
-                                      <UButton tone="neutral" size="sm" className="h-[30px]" onClick={() => (b.status === 'Available' ? askRetire(a.id, b.version) : setStatus(a.id, b.version, 'Available'))}>
+                                      <UButton tone="outline" size="sm" onClick={() => (b.status === 'Available' ? askRetire(a.id, b.version) : setStatus(a.id, b.version, 'Available'))}>
                                         {b.status === 'Available' ? 'Retire' : 'Restore'}
                                       </UButton>
                                     </div>
