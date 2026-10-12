@@ -72,8 +72,7 @@ function Sidebar({ page }: { page: Page }) {
                 <NavItem label="Apple" level={1} open={open.apple} onClick={() => t('apple')} />
                 {open.apple && (
                   <div className="flex flex-col gap-1.5 pl-5">
-                    <NavItem label="Profiles" level={2} to="/d1" active={page === 'profiles'} />
-                    <NavItem label="Applications" level={2} to="/l1" active={page === 'library'} />
+                    <NavItem label="Profiles" level={2} to="/d1" active={page === 'profiles' || page === 'library'} />
                   </div>
                 )}
               </div>

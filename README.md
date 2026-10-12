@@ -23,7 +23,7 @@ The home page is the Profiles list. The "Prototype" chip in the header opens a m
 | `#/d7` | VPP tab (later) |
 | `#/d8` | App Store tab at 1366 × 768 |
 | `#/d9` | Change App Store country, checked before save |
-| `#/l1` | App Library page (replaces App Groups) |
+| `#/l1` | Applications (App Library), reached from the prototype chip |
 | `#/s2` | App settings drawer, in-house app with builds |
 | `#/k1` | Kiosk, Single App picks from App Catalog |
 | `#/k2` | Kiosk, Multi App home screen and dock |
