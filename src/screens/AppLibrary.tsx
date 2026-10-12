@@ -68,7 +68,7 @@ export function AppLibraryPage({ initialTab = 'inhouse' }: { initialTab?: 'inhou
     setStatus(a.id, version, 'Available');
     toast({ title: `${version} restored`, sub: a.usedBy.devices ? `${plural(a.usedBy.devices, 'device')} in ${plural(a.usedBy.profiles, 'profile')} get it at next check-in.` : 'No profile uses this app, so no device changes.' });
   };
-  const copyBundle = (a: LibraryApp) => { navigator.clipboard?.writeText(a.bundleId); toast({ title: 'Bundle ID copied', sub: a.bundleId, tone: 'info' }); };
+  const copyBundle = (a: LibraryApp) => { navigator.clipboard?.writeText(a.bundleId)?.catch(() => {}); toast({ title: 'Bundle ID copied', sub: a.bundleId, tone: 'info' }); };
   const addBuild = (a: LibraryApp, b: ReadBuild) => {
     patch(a.id, (x) => ({ ...x, build: b.version, signingExpires: b.signingExpires, builds: [{ version: b.version, status: 'Available', uploaded: todayLabel }, ...x.builds] }));
     setOpenRow(a.id);
@@ -324,7 +324,7 @@ export function AppLibraryPage({ initialTab = 'inhouse' }: { initialTab?: 'inhou
                           <td className="px-2">
                             <UMenu trigger={<IconButton label={`More actions for ${a.name}`}><MoreVertical className="size-4" strokeWidth={1.7} /></IconButton>}>
                               <UMenuItem icon={ListChecks} onSelect={() => setAssignFor(a)}>View licence assignments</UMenuItem>
-                              <UMenuItem icon={Copy} onSelect={() => { navigator.clipboard?.writeText(a.bundleId); toast({ title: 'Bundle ID copied', sub: a.bundleId, tone: 'info' }); }} disabled={a.metadataMissing}>Copy bundle ID</UMenuItem>
+                              <UMenuItem icon={Copy} onSelect={() => { navigator.clipboard?.writeText(a.bundleId)?.catch(() => {}); toast({ title: 'Bundle ID copied', sub: a.bundleId, tone: 'info' }); }} disabled={a.metadataMissing}>Copy bundle ID</UMenuItem>
                             </UMenu>
                           </td>
                         </tr>

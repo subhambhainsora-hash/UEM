@@ -203,7 +203,7 @@ export function SsoSection({ catalog, allowed, onAllowed, all, onAll, onChange, 
   const [bundleDraft, setBundleDraft] = React.useState('');
   const [provider, setProvider] = React.useState<'miniorange' | 'custom'>('custom');
   const [open, setOpen] = React.useState(false);
-  const copy = (v: string) => <button type="button" aria-label="Copy" onClick={() => navigator.clipboard?.writeText(v)} className="flex border-0 bg-transparent p-0"><Copy className="size-[15px]" strokeWidth={1.7} /></button>;
+  const copy = (v: string) => <button type="button" aria-label="Copy" onClick={() => navigator.clipboard?.writeText(v)?.catch(() => {})} className="flex border-0 bg-transparent p-0"><Copy className="size-[15px]" strokeWidth={1.7} /></button>;
 
   return (
     <div className="flex flex-col gap-5">
