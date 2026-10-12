@@ -38,9 +38,9 @@ export function ProfileLayout({ section, onSection, children, dirty = 0, issueSe
     <AppShell page="profiles">
       <div className="flex min-h-0 grow flex-col overflow-y-auto px-[50px] pt-8 pb-4">
         <PageTitle>Profile configuration</PageTitle>
-        <div className="mt-6 flex grow">
+        <div className="mt-6 flex grow items-stretch">
           {/* Section nav · "Nav Items main states" */}
-          <div role="tablist" aria-orientation="vertical" className="flex w-[229px] shrink-0 flex-col gap-2 self-start border-e border-line pr-[25px]">
+          <div role="tablist" aria-orientation="vertical" className="flex w-[229px] shrink-0 flex-col gap-2 self-stretch border-e border-line pr-[25px]">
             {sections.map(([name, icon]) => {
               const active = name === section;
               const flagged = issueSections.includes(name);
