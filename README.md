@@ -10,7 +10,7 @@ npm run dev      # http://localhost:5173
 npm run build    # type-check and production build
 ```
 
-The home page lists all 16 screens. Each link opens the app in that state, and a bar at the bottom steps through them.
+The home page is the Profiles list. The "Prototype" chip in the header opens a menu of all 16 screen states.
 
 | Route | Screen |
 | --- | --- |
@@ -68,6 +68,6 @@ Icons the Figma export returned as placeholders (Getting started, Email policy, 
 - **Signing state is explicit.** Expired, expiring within 60 days and valid signing each show an icon and text, in the library, the catalog and the add drawer. Expired apps can't be added to a profile.
 - **"Allow every app" for SSO asks first** and shows a persistent warning while it is on.
 
-Layout: the app has a 1180px minimum width and scrolls on narrower windows. On short screens the working area scrolls while the header, sidebar and footer stay put. The prototype toolbar at the top steps between screens and can be hidden.
+Layout: the app has a 1180px minimum width and scrolls on narrower windows. On short screens the working area scrolls while the header, sidebar and footer stay put. The "Prototype" chip in the header switches between screen states.
 
 Data is mock data in `src/data.ts`. There is no backend yet.

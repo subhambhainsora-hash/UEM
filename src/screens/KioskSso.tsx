@@ -108,16 +108,16 @@ export function KioskSection({
                   {open ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
                 </button>
               </PopoverTrigger>
-              <PopoverContent align="end" className="w-[380px] rounded-[4px] border-0 bg-white p-0 font-sans shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
+              <PopoverContent align="end" side="bottom" sideOffset={4} avoidCollisions={false} onOpenAutoFocus={(e) => e.preventDefault()} className="w-[380px] rounded-[6px] border border-line bg-white p-1 font-sans shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
                 {catalog.map((a) => (
                   <button key={a.id} type="button" onClick={() => { onSingleApp(a.id); setOpen(false); }}
-                    className={cn('flex h-11 w-full items-center gap-3 border-0 bg-white px-3 text-[15px] text-ink hover:bg-[#f5f5f5]', a.id === singleApp && 'bg-[#f0f7ff]')}>
+                    className={cn('flex h-10 w-full items-center gap-3 rounded-[4px] border-0 bg-white px-2 text-[14px] text-ink outline-none hover:bg-[#f3f3f5] focus-visible:bg-[#f3f3f5]', a.id === singleApp && 'bg-nav-bg')}>
                     <AppIcon initials={a.initials} color={a.color} size={26} />
                     <span className="grow text-left">{a.name}</span>
                     <SourceBadge source={a.source} />
                   </button>
                 ))}
-                <button type="button" onClick={onAddApps} className="flex h-11 w-full items-center gap-2.5 border-0 border-t border-row bg-white px-3 text-[14px] text-uem">
+                <button type="button" onClick={onAddApps} className="mt-1 flex h-10 w-full items-center gap-2.5 rounded-[4px] border-0 border-t border-line bg-white px-2 text-[14px] font-semibold text-uem outline-none hover:bg-[#f3f3f5]">
                   <Plus className="size-4" strokeWidth={1.7} /> Add apps in App Catalog
                 </button>
               </PopoverContent>
@@ -256,7 +256,7 @@ export function SsoSection({ catalog, allowed, onAllowed, all, onAll, onChange, 
               <ChevronDown className="absolute right-2.5 size-4 text-muted" />
             </div>
           </PopoverTrigger>
-          <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] rounded-[6px] border border-line bg-white p-1 font-sans shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
+          <PopoverContent align="start" side="bottom" sideOffset={4} onOpenAutoFocus={(e) => e.preventDefault()} className="w-[var(--radix-popover-trigger-width)] rounded-[6px] border border-line bg-white p-1 font-sans shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
             {catalog.map((a) => (
               <label key={a.id} className="flex h-10 items-center gap-3 rounded-[4px] px-2 text-[14px] hover:bg-[#f3f3f5]">
                 <UCheckbox checked={allowed.includes(a.id)} onCheckedChange={(v) => onAllowed(v ? [...allowed, a.id] : allowed.filter((x) => x !== a.id))} />
